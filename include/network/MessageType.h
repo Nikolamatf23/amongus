@@ -1,0 +1,21 @@
+enum class MessageType
+{
+    Join,
+    JoinAccepted,
+    LobbyUpdate,
+    StartGame,
+    MoveInput,
+    StateSnapshot,
+    KillRequest,
+    ReportBody,
+    TaskCompleted,
+    PhaseChanged,
+    ChatMessage,
+    Vote,
+    VoteResult,
+    GameOver,
+    UdpRegister,
+    UdpRegistered,
+    PositionSnapshot,
+    Invalid
+};
