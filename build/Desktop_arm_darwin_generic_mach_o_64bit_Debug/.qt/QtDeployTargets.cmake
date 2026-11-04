@@ -1,2 +1,0 @@
-set(__QT_DEPLOY_TARGET_AmongUs_FILE /Users/nikola/Documents/Projekti/AmongUs/build/Desktop_arm_darwin_generic_mach_o_64bit_Debug/AmongUs.app/Contents/MacOS/AmongUs)
-set(__QT_DEPLOY_TARGET_AmongUs_TYPE EXECUTABLE)
