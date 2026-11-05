@@ -53,6 +53,7 @@ set(PROJECT_SOURCES
     include/game/Player.h
     include/game/Task.h
     include/game/VotingSession.h
+        include/game/tasks/WireTask.h
 )
 
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)
