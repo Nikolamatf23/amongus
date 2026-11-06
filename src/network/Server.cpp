@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QTcpSocket>
+#include <stdexcept>
 #include <QUuid>
 
 #include <cmath>
@@ -13,10 +14,9 @@
 Server::Server(QObject* parent)
     : QObject(parent)
 {
-    connect(
-        &m_tcp,
-        &QTcpServer::newConnection,
-        this,
+    connect(&m_tcp,
+    &QTcpServer::newConnection,
+    this,
         &Server::onNewConnection
         );
 
@@ -61,11 +61,92 @@ void Server::stop()
     m_lastMoveTick.clear();
     m_phaseId = 0;
 }
+bool Server::trySendWithUdp(
+    const Message& msg,
+    MessageType type,
+    const PlayerNetworkSession& session
+    )
+{
+    if (type != MessageType::PositionSnapshot) {
+        return false;
+    }
+
+    QByteArray datagram = msg.toBytes();
+
+    if (datagram.size() > 1200) {
+        throw std::length_error("Message is too big");
+    }
+
+    if (session.udpAddress.isNull()) {
+        throw std::invalid_argument("UDP address is not set");
+    }
+
+    if (session.udpPort == 0) {
+        throw std::invalid_argument("UDP port is not set");
+    }
+
+    qint64 bytesSent = m_udp.writeDatagram(
+        datagram,
+        session.udpAddress,
+        session.udpPort
+        );
+
+    if (bytesSent != datagram.size()) {
+        throw std::runtime_error("UDP failed");
+    }
+
+    return true;
+}
+
+bool Server::trySendWithTCP(
+    const Message& msg,
+    MessageType type,
+    const PlayerNetworkSession& session
+    )
+{
+    if (type == MessageType::Invalid ||
+        type == MessageType::PositionSnapshot) {
+        return false;
+    }
+
+    if (session.tcpConnection == nullptr) {
+        throw std::runtime_error("TCP connection is not set");
+    }
+
+    // Kopija je potrebna samo za poruke koje dopunjujemo.
+    if (type == MessageType::JoinAccepted ||
+        type == MessageType::PhaseChanged) {
+        Message outgoing = msg;
+        QJsonObject& content = outgoing.get_messageContent();
+
+        if (type == MessageType::JoinAccepted) {
+            content["playerId"] = session.tcpConnection->playerId();
+            content["udpToken"] = session.udpToken;
+            content["serverUdpPort"] =
+                static_cast<int>(m_udp.localPort());
+        }
+
+        if (type == MessageType::PhaseChanged) {
+            content["phaseId"] = static_cast<int>(m_phaseId);
+        }
+
+        session.tcpConnection->send(outgoing);
+        return true;
+    }
+
+    session.tcpConnection->send(msg);
+    return true;
+}
 
 void Server::broadcast(const Message& msg)
 {
-    Message outgoing = msg;
+    if (msg.type() == MessageType::Invalid) {
+        throw std::invalid_argument(
+            "Server::broadcast: neispravna poruka"
+            );
+    }
 
+    // Globalno stanje menjamo jednom, pre petlje.
     if (msg.type() == MessageType::StartGame) {
         m_phaseId = 0;
         m_lastMoveTick.clear();
@@ -74,102 +155,46 @@ void Server::broadcast(const Message& msg)
     if (msg.type() == MessageType::PhaseChanged) {
         ++m_phaseId;
         m_lastMoveTick.clear();
-
-        // Klijenti tako saznaju koji phaseId treba da stave
-        // u naredne UDP poruke za kretanje.
-        outgoing.get_messageContent()["phaseId"] =
-            static_cast<int>(m_phaseId);
     }
 
-    if (msg.type() == MessageType::PositionSnapshot) {
-        QByteArray datagram = outgoing.toBytes();
-
-        // Jedan UDP datagram treba da bude mali.
-        // GameController deli pozicije u vise poruka ako je potrebno.
-        if (datagram.size() > 1200) {
-            return;
-        }
-
-        for (const PlayerNetworkSession& session : m_players) {
-            if (session.udpPort == 0 ||
-                session.udpAddress.isNull()) {
-                continue;
-            }
-
-            m_udp.writeDatagram(
-                datagram,
-                session.udpAddress,
-                session.udpPort
-                );
-        }
-
-        return;
-    }
-
-    // Svi ostali događaji koje braadcast šalje
-    // idu kroz postojeće TCP veze.
+    // session je referenca na trenutni zapis u m_players.
     for (const PlayerNetworkSession& session : m_players) {
-        if (session.tcpConnection != nullptr) {
-            session.tcpConnection->send(outgoing);
+        if (msg.type() == MessageType::PositionSnapshot) {
+            trySendWithUdp(msg, msg.type(), session);
+        }
+        else {
+            trySendWithTCP(msg, msg.type(), session);
         }
     }
 }
 
-// GameController poziva ovo kada salje jednom igracu.
-// const playerId jer necemo da ga menjamo
-void Server::sendTo(const int playerId, const Message& msg)
+void Server::sendTo(
+    int playerId,
+    const Message& msg
+    )
 {
-    auto it = m_players.find(playerId);
-
-    if (it == m_players.end()) {
-        return;
+    if (msg.type() == MessageType::Invalid) {
+        throw std::invalid_argument(
+            "Server::sendTo: neispravna poruka"
+            );
     }
 
-    PlayerNetworkSession& session = it.value();
-    Message outgoing = msg;
+    auto it = m_players.constFind(playerId);
+
+    if (it == m_players.cend()) {
+        throw std::invalid_argument("Invalid ID of a player");
+    }
+
+    // Referenca na postojecu sesiju, bez kopiranja.
+    const PlayerNetworkSession& session = it.value();
 
     if (msg.type() == MessageType::PositionSnapshot) {
-        if (session.udpPort == 0 ||
-            session.udpAddress.isNull()) {
-            return;
-        }
-
-        QByteArray datagram = outgoing.toBytes();
-
-        if (datagram.size() > 1200) {
-            return;
-        }
-
-        m_udp.writeDatagram(
-            datagram,
-            session.udpAddress,
-            session.udpPort
-            );
-
+        trySendWithUdp(msg, msg.type(), session);
         return;
     }
 
-    if (msg.type() == MessageType::JoinAccepted) {
-        // Postojeci JoinAccepted obogacujemo mreznim podacima.
-        // GameController i dalje koristi sendTo kao ranije.
-        QJsonObject& content = outgoing.get_messageContent();
-
-        content["playerId"] = playerId;
-        content["udpToken"] = session.udpToken;
-        content["serverUdpPort"] =
-            static_cast<int>(m_udp.localPort());
-    }
-
-    if (msg.type() == MessageType::PhaseChanged) {
-        outgoing.get_messageContent()["phaseId"] =
-            static_cast<int>(m_phaseId);
-    }
-
-    if (session.tcpConnection != nullptr) {
-        session.tcpConnection->send(outgoing);
-    }
+    trySendWithTCP(msg, msg.type(), session);
 }
-
 void Server::kick(int playerId)
 {
     auto it = m_players.find(playerId);
@@ -237,206 +262,114 @@ void Server::onNewConnection()
 
 void Server::onUdpReadyRead()
 {
+    constexpr qint64 maxDatagramSize = 1200;
+
     while (m_udp.hasPendingDatagrams()) {
-        qint64 datagramSize =
-            m_udp.pendingDatagramSize();
+        qint64 datagramSize = m_udp.pendingDatagramSize();
 
         if (datagramSize < 0) {
             return;
         }
 
-        // Odbaci prazan ili prevelik datagram.
-        if (datagramSize == 0 ||
-            datagramSize > 1200) {
-
+        // Odbacujemo prazan ili prevelik datagram.
+        if (datagramSize == 0 || datagramSize > maxDatagramSize) {
             m_udp.readDatagram(nullptr, 0);
             continue;
         }
 
         QByteArray datagram;
-        datagram.resize(
-            static_cast<int>(datagramSize)
-        );
+        datagram.resize(static_cast<int>(datagramSize));
 
         QHostAddress senderAddress;
         quint16 senderPort = 0;
 
-        qint64 bytesRead =
-            m_udp.readDatagram(
-                datagram.data(),
-                datagram.size(),
-                &senderAddress,
-                &senderPort
-            );
+        qint64 bytesRead = m_udp.readDatagram(datagram.data(), datagram.size(), &senderAddress, &senderPort);
 
         if (bytesRead != datagramSize) {
             continue;
         }
 
-        // Prvo proveravamo da li je datagram validan JSON.
+        // Parsiramo JSON jednom.
         QJsonParseError error;
+        QJsonDocument document = QJsonDocument::fromJson(datagram, &error);
 
-        QJsonDocument document =
-            QJsonDocument::fromJson(
-                datagram,
-                &error
-            );
-
-        if (error.error != QJsonParseError::NoError ||
-            !document.isObject()) {
+        if (error.error != QJsonParseError::NoError || !document.isObject()) {
             continue;
         }
 
-        QJsonObject jsonObject =
-            document.object();
+        QJsonObject jsonObject = document.object();
+        int rawType = jsonObject.value("type").toInt(-1);
 
-        // Proveravamo da li JSON ima type.
-        int rawType =
-            jsonObject.value("type").toInt(-1);
-
-        // Preko UDP-a server prihvata samo ove tipove.
-        if (rawType !=
-                static_cast<int>(
-                    MessageType::UdpRegister
-                ) &&
-            rawType !=
-                static_cast<int>(
-                    MessageType::MoveInput
-                )) {
+        // Server preko UDP-a prima samo registraciju i kretanje.
+        if (rawType != static_cast<int>(MessageType::UdpRegister) && rawType != static_cast<int>(MessageType::MoveInput)) {
             continue;
         }
 
-        // messageContent mora biti JSON objekat.
-        if (!jsonObject.value("messageContent")
-                 .isObject()) {
+        if (!jsonObject.value("messageContent").isObject()) {
             continue;
         }
 
-        // Pretvaramo bajtove u našu Message klasu.
-        Message message =
-            Message::fromBytes(datagram);
+        MessageType type = static_cast<MessageType>(rawType);
+        QJsonObject content = jsonObject.value("messageContent").toObject();
 
-        // Ako pretvaranje nije uspelo, odbaci poruku.
-        if (message.type() ==
-            MessageType::Invalid) {
-            continue;
-        }
+        // Pronalazimo igraca kome poruka pripada.
+        int playerId = content.value("playerId").toInt(-1);
+        auto it = m_players.find(playerId);
 
-        QJsonObject content =
-            message.get_messageContent();
-
-        // Čitamo ID igrača.
-        int playerId =
-            content.value("playerId").toInt(-1);
-
-        auto it =
-            m_players.find(playerId);
-
-        // Igrač ne postoji u mapi.
         if (it == m_players.end()) {
             continue;
         }
 
-        PlayerNetworkSession& session =
-            it.value();
+        PlayerNetworkSession& session = it.value();
+        QString token = content.value("udpToken").toString();
 
-        // Čitamo token iz poruke.
-        QString token =
-            content.value("udpToken").toString();
-
-        // Token mora biti ispravan.
-        if (token.isEmpty() ||
-            token != session.udpToken) {
+        if (token.isEmpty() || token != session.udpToken) {
             continue;
         }
 
-        // UDP registracija.
-        if (message.type() ==
-            MessageType::UdpRegister) {
+        // Registrujemo adresu i port sa kojih je datagram stigao.
+        if (type == MessageType::UdpRegister) {
+            session.udpAddress = senderAddress;
+            session.udpPort = senderPort;
 
-            // Adresu i port uzimamo iz stvarnog
-            // pristiglog datagrama.
-            session.udpAddress =
-                senderAddress;
+            Message reply(MessageType::UdpRegistered, {{"playerId", playerId}});
+            m_udp.writeDatagram(reply.toBytes(), senderAddress, senderPort);
 
-            session.udpPort =
-                senderPort;
-
-            // Novi UDP endpoint počinje novi
-            // redosled MoveInput poruka.
-            m_lastMoveTick.remove(playerId);
-
-            Message reply(
-                MessageType::UdpRegistered,
-                {
-                    {"playerId", playerId}
-                }
-            );
-
-            // Potvrdu šaljemo na adresu i port
-            // sa kojih je stigao UdpRegister.
-            m_udp.writeDatagram(
-                reply.toBytes(),
-                senderAddress,
-                senderPort
-            );
-
+            // Ponavljanje registracije ne resetuje poslednji tick.
             continue;
         }
 
-        // MoveInput prihvatamo samo sa adrese
-        // i porta koji su registrovani.
-        if (session.udpPort == 0 ||
-            session.udpAddress.isNull() ||
-            session.udpAddress != senderAddress ||
-            session.udpPort != senderPort) {
+        // Preostali tip je MoveInput.
+        if (session.udpPort == 0 || session.udpAddress.isNull() || session.udpAddress != senderAddress || session.udpPort != senderPort) {
             continue;
         }
 
-        // Čitamo fazu igre.
-        int phaseId =
-            content.value("phaseId").toInt(-1);
+        // Poruka mora pripadati trenutnom periodu igre.
+        int phaseId = content.value("phaseId").toInt(-1);
 
-        // Poruka mora pripadati trenutnoj fazi.
-        if (phaseId < 0 ||
-            static_cast<quint32>(phaseId) !=
-                m_phaseId) {
+        if (phaseId < 0 || static_cast<quint32>(phaseId) != m_phaseId) {
             continue;
         }
 
-        // Tick može doći iz JSON-a kao double,
-        // zato prvo proveravamo da li je ceo broj.
-        double tickValue =
-            content.value("tick").toDouble(-1);
+        // Tick mora biti pozitivan ceo broj koji staje u quint32.
+        double tickValue = content.value("tick").toDouble(-1);
 
-        if (tickValue < 1 ||
-            tickValue >
-                std::numeric_limits<quint32>::max() ||
-            std::floor(tickValue) != tickValue) {
+        if (!std::isfinite(tickValue) || tickValue < 1 || tickValue > std::numeric_limits<quint32>::max() || std::floor(tickValue) != tickValue) {
             continue;
         }
 
-        quint32 tick =
-            static_cast<quint32>(tickValue);
+        quint32 tick = static_cast<quint32>(tickValue);
 
-        // Odbacujemo staru ili dupliranu poruku.
-        if (m_lastMoveTick.contains(playerId) &&
-            tick <=
-                m_lastMoveTick.value(playerId)) {
+        // Odbacujemo duplirane i zastarele poruke.
+        if (m_lastMoveTick.contains(playerId) && tick <= m_lastMoveTick.value(playerId)) {
             continue;
         }
 
-        // Pamtimo poslednji prihvaćeni tick.
-        m_lastMoveTick.insert(
-            playerId,
-            tick
-        );
+        m_lastMoveTick.insert(playerId, tick);
 
-        // GameController dobija validan MoveInput.
-        emit messageReceived(
-            playerId,
-            message
-        );
+        // Pravimo Message iz vec procitanih podataka.
+        Message message(type, content);
+        emit messageReceived(playerId, message);
     }
 }
 

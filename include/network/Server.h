@@ -26,6 +26,9 @@ public:
     void broadcast(const Message& msg);
     void sendTo(int playerId, const Message& msg);
     void kick(int playerId);
+    bool trySendWithUdp(const Message& msg, MessageType type, const PlayerNetworkSession& playerNetworkSession);
+    bool trySendWithTCP(const Message& msg, MessageType type, const PlayerNetworkSession& playerNetworkSession);
+
 
 signals:
     void messageReceived(int playerId, const Message& msg);
@@ -51,6 +54,7 @@ private:
     // 1-> 2 -> 3 -> 5 i sad dodje neki 4 njega necemo uzeti nego ga odbacujemo jer zastareo i idemo dalje
     QMap<int, quint32> m_lastMoveTick;
     //phaseId služi da server zna iz kog perioda igre dolazi UDP poruka.
+    //da ako je neki deo pre tri sastanka, da znamo da njega ne uzimamo
     quint32 m_phaseId = 0;
 };
 
