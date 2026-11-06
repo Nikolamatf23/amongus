@@ -40,6 +40,7 @@ private:
     void handleReport(int playerId, const Message& msg);
     void handleTaskCompleted(int playerId, const Message& msg);
     void handleVote(int playerId, const Message& msg);
+    void handleEmergencyMeeting(int playerId, const Message& msg);
     void handleChat(int playerId, const Message& msg);
 
     void assignRoles();
