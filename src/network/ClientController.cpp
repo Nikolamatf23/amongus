@@ -1,9 +1,15 @@
 #include "network/ClientController.h"
 #include "network/Client.h"
+#include "game/GameState.h"
 
-ClientController::ClientController(Client* client, QObject* parent)
-    : QObject(parent),
-    m_client(client)
+#include <QJsonArray>
+
+ClientController::ClientController(Client* client,
+                                   GameState* state,
+                                   QObject* parent)
+    : QObject(parent)
+    , m_client(client)
+    , m_state(state)
 {
     connect(m_client, &Client::connected,
             this, &ClientController::onConnected);
@@ -19,10 +25,13 @@ ClientController::ClientController(Client* client, QObject* parent)
 
 void ClientController::connectToServer(const QString& host,
                                        quint16 tcpPort,
-                                       const QString& playerName)
+                                       const QString& name)
 {
-    // Ime pamtimo jer Join saljemo tek kad TCP veza bude gotova.
-    m_playerName = playerName;
+    m_playerName = name;          // Join šaljemo tek kad TCP bude gotov
+    m_myId = -1;
+    m_nearTaskId = -1;
+    m_canKill = false;
+    m_canEmergency = false;
     m_client->connectToHost(host, tcpPort);
 }
 
@@ -31,25 +40,14 @@ void ClientController::disconnectFromServer()
     m_client->disconnectFromHost();
 }
 
-bool ClientController::isConnected() const
-{
-    return m_client->isConnected();
-}
-
-int ClientController::myId() const
-{
-    return m_client->myId();
-}
-
 void ClientController::onConnected()
 {
     sendMessage(MessageType::Join, {{"name", m_playerName}});
-    emit connectedToServer();
 }
 
 void ClientController::onDisconnected()
 {
-    emit disconnectedFromServer();
+    emit connectionLost();
 }
 
 void ClientController::onError(const QString& text)
@@ -59,15 +57,20 @@ void ClientController::onError(const QString& text)
 
 // ------------------------------------------------------------ akcije
 
-void ClientController::sendMove(double dx, double dy)
+void ClientController::requestStart()
 {
-    // Client sam dodaje playerId, udpToken, phaseId i tick.
-    sendMessage(MessageType::MoveInput, {{"dx", dx}, {"dy", dy}});
+    sendMessage(MessageType::StartGame);
 }
 
-void ClientController::requestKill(int targetId)
+void ClientController::sendMoveInput(const QPointF& dir)
 {
-    sendMessage(MessageType::KillRequest, {{"targetId", targetId}});
+    // Client sam dodaje playerId, udpToken, phaseId i tick.
+    sendMessage(MessageType::MoveInput, {{"dx", dir.x()}, {"dy", dir.y()}});
+}
+
+void ClientController::requestKill(int victimId)
+{
+    sendMessage(MessageType::KillRequest, {{"targetId", victimId}});
 }
 
 void ClientController::reportBody(int bodyId)
@@ -75,22 +78,28 @@ void ClientController::reportBody(int bodyId)
     sendMessage(MessageType::ReportBody, {{"bodyId", bodyId}});
 }
 
+void ClientController::requestEmergency()
+{
+    sendMessage(MessageType::EmergencyMeeting);
+}
+
 void ClientController::completeTask(int taskId)
 {
     sendMessage(MessageType::TaskCompleted, {{"taskId", taskId}});
 }
 
-void ClientController::sendVote(int targetId)
+void ClientController::castVote(int targetId)
 {
     sendMessage(MessageType::Vote, {{"targetId", targetId}});
 }
 
 void ClientController::sendChat(const QString& text)
 {
-    if (text.trimmed().isEmpty()) {
+    const QString t = text.trimmed();
+    if (t.isEmpty()) {
         return;
     }
-    sendMessage(MessageType::ChatMessage, {{"text", text}});
+    sendMessage(MessageType::ChatMessage, {{"text", t}});
 }
 
 void ClientController::sendMessage(MessageType type, const QJsonObject& content)
@@ -98,51 +107,88 @@ void ClientController::sendMessage(MessageType type, const QJsonObject& content)
     m_client->send(Message(type, content));
 }
 
+// ------------------------------------------------------------ stanje
+
+const GameState* ClientController::state() const { return m_state; }
+int  ClientController::myId() const              { return m_myId; }
+bool ClientController::isConnected() const       { return m_client->isConnected(); }
+int  ClientController::nearTaskId() const        { return m_nearTaskId; }
+bool ClientController::canKill() const           { return m_canKill; }
+bool ClientController::canCallEmergency() const  { return m_canEmergency; }
+int  ClientController::phaseSeconds() const      { return m_phaseSeconds; }
+
 // ------------------------------------------------------------ prijem
 
 void ClientController::onMessage(const Message& msg)
 {
-    // get_messageContent nije const, zato radimo kopiju poruke.
+    // get_messageContent() nije const, zato radimo kopiju poruke.
     Message incoming = msg;
     const QJsonObject content = incoming.get_messageContent();
 
     switch (msg.type()) {
+
     case MessageType::JoinAccepted:
-        // Client je vec obradio playerId/udpToken, mi samo javljamo dalje.
-        emit joined(m_client->myId());
+        // Client je već obradio playerId/udpToken; mi samo pamtimo svoj id.
+        m_myId = m_client->myId();
         break;
 
     case MessageType::LobbyUpdate:
-        emit lobbyUpdated(content);
+        // Sadržaj = GameState::toJson() u fazi Lobby (lista igrača).
+        m_state->fromJson(content);
+        emit lobbyChanged();
         break;
 
     case MessageType::StartGame:
-        emit gameStarted(content);
+        // Sadržaj = GameState::toJson() sa ulogama i taskovima.
+        m_state->fromJson(content);
+        emit stateChanged();
+        emit phaseChanged(m_state->phase());
         break;
 
     case MessageType::StateSnapshot:
-        emit stateSnapshotReceived(content);
+        // Sadržaj = GameState::toJson() + podaci za HUD (računa server).
+        m_state->fromJson(content);
+        m_nearTaskId    = content.value("nearTaskId").toInt(-1);
+        m_canKill       = content.value("canKill").toBool(false);
+        m_canEmergency  = content.value("canEmergency").toBool(false);
+        emit stateChanged();
         break;
 
     case MessageType::PositionSnapshot:
-        emit positionsReceived(content);
+        // UDP: menja samo pozicije, nikad uloge, alive ili taskove.
+        for (const QJsonValue& v : content.value("players").toArray()) {
+            const QJsonObject pj = v.toObject();
+            if (Player* p = m_state->player(pj.value("id").toInt(-1))) {
+                p->setPos(QPointF(pj.value("x").toDouble(),
+                                  pj.value("y").toDouble()));
+            }
+        }
+        emit stateChanged();
         break;
 
-    case MessageType::PhaseChanged:
-        emit phaseChanged(content.value("phaseId").toInt(0), content);
+    case MessageType::PhaseChanged: {
+        const auto ph = static_cast<GamePhase>(content.value("phase").toInt());
+        m_state->setPhase(ph);
+        m_phaseSeconds = content.value("seconds").toInt(0);   // npr. 180
+        emit phaseChanged(ph);
         break;
+    }
 
     case MessageType::ChatMessage:
-        emit chatReceived(content.value("senderId").toInt(-1),
-                          content.value("text").toString());
+        emit chatReceived(ChatMessage::fromJson(content));
         break;
 
     case MessageType::VoteResult:
-        emit voteResultReceived(content);
+        emit voteResult(content.value("ejectedId").toInt(-1),
+                        content.value("wasImpostor").toBool(false));
         break;
 
     case MessageType::GameOver:
-        emit gameOver(content);
+        // Server tu šalje i završno stanje sa otkrivenim ulogama.
+        if (content.contains("players")) {
+            m_state->fromJson(content);
+        }
+        emit gameOver(static_cast<Winner>(content.value("winner").toInt()));
         break;
 
     default:
