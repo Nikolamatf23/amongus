@@ -29,7 +29,7 @@ public:
     void send(const Message& message);
 
     // GETTER: vraca IP adresu povezanog klijenta.
-    QHostAddress peerAddress() const;
+    QHostAddress get_adress() const;
 
 signals:
     // SIGNAL: obavestava Server da je stigla kompletna poruka.

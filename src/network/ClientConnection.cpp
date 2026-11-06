@@ -36,7 +36,7 @@ int ClientConnection::playerId() const
     return m_playerId;
 }
 
-QHostAddress ClientConnection::peerAddress() const
+QHostAddress ClientConnection::get_adress() const
 {
     return m_playerSocket->peerAddress();
 }
