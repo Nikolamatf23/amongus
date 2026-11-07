@@ -44,15 +44,10 @@ private:
     QTcpServer m_tcp;
     QUdpSocket m_udp;
 
-    // Jedan zapis po igracu: TCP veza + UDP adresa i port.
+    // Jedan zapis po igracu: TCP veza + UDP adresa , port i tick.
     QMap<int, PlayerNetworkSession> m_players;
 
     int m_nextPlayerId = 1;
-
-    // Poslednji prihvaceni UDP tick za svakog igraca.
-    //tick nam sluzi da damo redosled porukama i npr ako idu poruke sa sledecim tick-omvima
-    // 1-> 2 -> 3 -> 5 i sad dodje neki 4 njega necemo uzeti nego ga odbacujemo jer zastareo i idemo dalje
-    QMap<int, quint32> m_lastMoveTick;
     //phaseId služi da server zna iz kog perioda igre dolazi UDP poruka.
     //da ako je neki deo pre tri sastanka, da znamo da njega ne uzimamo
     quint32 m_phaseId = 0;

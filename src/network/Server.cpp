@@ -58,7 +58,6 @@ void Server::stop()
     }
 
     m_players.clear();
-    m_lastMoveTick.clear();
     m_phaseId = 0;
 }
 bool Server::trySendWithUdp(
@@ -149,12 +148,16 @@ void Server::broadcast(const Message& msg)
     // Globalno stanje menjamo jednom, pre petlje.
     if (msg.type() == MessageType::StartGame) {
         m_phaseId = 0;
-        m_lastMoveTick.clear();
+        for (PlayerNetworkSession& session : m_players) {
+            session.last_move_tick = 0;
+        }
     }
 
     if (msg.type() == MessageType::PhaseChanged) {
         ++m_phaseId;
-        m_lastMoveTick.clear();
+        for (PlayerNetworkSession& session : m_players) {
+            session.last_move_tick = 0;
+        }
     }
 
     // session je referenca na trenutni zapis u m_players.
@@ -206,7 +209,6 @@ void Server::kick(int playerId)
     PlayerNetworkSession session = it.value();
 
     m_players.erase(it);
-    m_lastMoveTick.remove(playerId);
 
     if (session.tcpConnection != nullptr) {
         session.tcpConnection->deleteLater();
@@ -233,6 +235,7 @@ void Server::onNewConnection()
             );
 
         // ClientConnection postaje vlasnik TCP socket-a.
+        // time dobijamo da kada izbrisemo connexction brise se i playerSocket
         playerSocket->setParent(connection);
 
         PlayerNetworkSession session;
@@ -320,7 +323,7 @@ void Server::onUdpReadyRead()
             continue;
         }
 
-        PlayerNetworkSession& session = it.value();
+        PlayerNetworkSession& session = it.value(); //sesija igraca koji nam je poslao poruku
         QString token = content.value("udpToken").toString();
 
         if (token.isEmpty() || token != session.udpToken) {
@@ -361,11 +364,11 @@ void Server::onUdpReadyRead()
         quint32 tick = static_cast<quint32>(tickValue);
 
         // Odbacujemo duplirane i zastarele poruke.
-        if (m_lastMoveTick.contains(playerId) && tick <= m_lastMoveTick.value(playerId)) {
+        if (m_players.contains(playerId) && tick <= session.last_move_tick) {
             continue;
         }
 
-        m_lastMoveTick.insert(playerId, tick);
+        session.last_move_tick = tick;
 
         // Pravimo Message iz vec procitanih podataka.
         Message message(type, content);
@@ -384,7 +387,6 @@ void Server::onPlayerDisconnected(int playerId)
     PlayerNetworkSession session = it.value();
 
     m_players.erase(it);
-    m_lastMoveTick.remove(playerId);
 
     if (session.tcpConnection != nullptr) {
         session.tcpConnection->deleteLater();
