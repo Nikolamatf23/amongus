@@ -1,127 +1,141 @@
 #include "game/GameMap.h"
 
-#include <QLineF>
-#include <QRandomGenerator>
-#include <QtMath>
-
-#include <limits>
+#include <algorithm>
+#include <cmath>
+#include <utility>
 
 namespace
 {
-constexpr int     SPAWN_COUNT   = 10;     // max broj igraca
-constexpr int     STATION_COUNT = 12;
-constexpr double  SPAWN_RADIUS  = 80.0;   // krug spawn tacaka oko centra
-constexpr double  CHECK_RADIUS  = 20.0;   // tacka mora da ima mesta za igraca
-constexpr quint32 MAP_SEED      = 2026;   // isti seed -> iste stanice svaki put
+// Ove konstante su dostupne samo u ovom .cpp fajlu.
+constexpr double PlacementRadius = 20.0; // Poluprečnik za proveru prostora na početnim pozicijama i stanicama.
+constexpr int PlacementStep = 40;        // Razmak između tačaka koje proveravamo na maski.
+constexpr int MaxSpawnPoints = 10;       // Najveći broj početnih pozicija.
+constexpr int MaxTaskStations = 12;      // Najveći broj stanica za zadatke.
 }
 
-bool GameMap::load(const QString& jpgPath, const QString& maskPath)
+// Učitava slike i priprema privremeni raspored početnih pozicija i stanica.
+bool GameMap::load(const QString& backgroundPath, const QString& maskPath)
 {
-    QPixmap background;
-    QImage  mask;
-    if (!background.load(jpgPath) || !mask.load(maskPath)) {
+    // Učitavanje u privremeni objekat čuva prethodnu mapu ako učitavanje ne uspe.
+    GameMap loaded;
+    const QImage mask(maskPath);
+    // Slika i maska moraju da postoje i imaju iste dimenzije.
+    if (!loaded.m_background.load(backgroundPath) || mask.isNull() ||
+        loaded.m_background.size() != mask.size()) {
         return false;
     }
 
-    m_background = background;
-    // Maska u sivim tonovima (1 bajt po pikselu), iste velicine kao slika.
-    m_mask = mask.convertToFormat(QImage::Format_Grayscale8)
-                 .scaled(m_background.size());
+    // Svaki piksel maske postaje jedan bajt svetline od 0 do 255.
+    loaded.m_mask = mask.convertToFormat(QImage::Format_Grayscale8);
+    if (loaded.m_mask.isNull()) {
+        return false;
+    }
 
-    // ---- sve prohodne tacke na mrezi od 40 px ---------------------------
+    // Na mreži tačaka zadržavamo one na kojima ima prostora za igrača.
+    // Ovo je privremeni raspored dok ne dobijemo koordinate za konkretnu mapu.
     QVector<QPointF> candidates;
-    for (int y = 20; y < m_mask.height(); y += 40) {
-        for (int x = 20; x < m_mask.width(); x += 40) {
-            if (isWalkable(QPointF(x, y), CHECK_RADIUS)) {
-                candidates.append(QPointF(x, y));
+    for (int y = PlacementStep / 2; y < mask.height(); y += PlacementStep) {
+        for (int x = PlacementStep / 2; x < mask.width(); x += PlacementStep) {
+            const QPointF position(x, y);
+            if (loaded.isWalkable(position, PlacementRadius)) {
+                candidates.append(position);
             }
         }
     }
-    m_spawnPoints.clear();
-    m_stations.clear();
-    if (candidates.isEmpty()) {
+
+    // Biramo stanice u ravnomernim razmacima kroz listu prohodnih tačaka.
+    const auto stationCount = std::min<qsizetype>(MaxTaskStations, candidates.size());
+    for (qsizetype i = 0; i < stationCount; ++i) {
+        loaded.m_stations.append(candidates.at(i * candidates.size() / stationCount));
+    }
+
+    // Sortiramo po kvadratu udaljenosti od centra da bismo tu grupisali spawn tačke.
+    const QPointF center(mask.width() / 2.0, mask.height() / 2.0);
+    std::stable_sort(candidates.begin(), candidates.end(),
+                     [center](const QPointF& a, const QPointF& b) {
+        const QPointF first = a - center;
+        const QPointF second = b - center;
+        return QPointF::dotProduct(first, first) < QPointF::dotProduct(second, second);
+    });
+
+    // Uzimamo do deset najbližih tačaka. Ako ih nema, lista ostaje prazna.
+    const auto spawnCount = std::min<qsizetype>(MaxSpawnPoints, candidates.size());
+    loaded.m_spawnPoints = candidates.mid(0, spawnCount);
+
+    // Tek nakon uspešnog učitavanja preuzimamo sve podatke nove mape.
+    *this = std::move(loaded);
+    return true;
+}
+
+// Proverava da li krug igrača staje unutar mape bez presecanja prepreka.
+bool GameMap::isWalkable(const QPointF& pos, double radius) const
+{
+    // Odbijamo neučitanu masku, nevažeće koordinate i negativan poluprečnik.
+    if (m_mask.isNull() || !std::isfinite(pos.x()) || !std::isfinite(pos.y()) ||
+        !std::isfinite(radius) || radius < 0.0) {
+        return false;
+    }
+
+    // Granice pravougaonika koji obuhvata krug igrača.
+    const double left = pos.x() - radius;
+    const double right = pos.x() + radius;
+    const double top = pos.y() - radius;
+    const double bottom = pos.y() + radius;
+    // Ceo krug mora da stane u mapu, a centar mora da bude unutar slike.
+    if (left < 0.0 || top < 0.0 || right > m_mask.width() || bottom > m_mask.height() ||
+        pos.x() >= m_mask.width() || pos.y() >= m_mask.height()) {
+        return false;
+    }
+
+    // Vrednosti 0–127 označavaju prepreku, a 128–255 prohodan prostor.
+    if (m_mask.constScanLine(static_cast<int>(pos.y()))[static_cast<int>(pos.x())] <= 127) {
+        return false;
+    }
+    // Za poluprečnik nula dovoljna je provera piksela u centru.
+    if (radius == 0.0) {
         return true;
     }
 
-    // ---- spawn: krug oko centra, ili najbliza prohodna tacka -----------
-    const QPointF center(m_mask.width() / 2.0, m_mask.height() / 2.0);
-    for (int i = 0; i < SPAWN_COUNT; ++i) {
-        const double a = 2.0 * M_PI * i / SPAWN_COUNT;
-        QPointF p = center + QPointF(SPAWN_RADIUS * qCos(a), SPAWN_RADIUS * qSin(a));
-        if (!isWalkable(p, CHECK_RADIUS)) {
-            QPointF best = candidates.first();
-            for (const QPointF& c : candidates) {
-                if (QLineF(p, c).length() < QLineF(p, best).length()) {
-                    best = c;
-                }
+    // Pregledamo piksele u obuhvatnom pravougaoniku i proveravamo dodir sa zidovima.
+    const double radiusSquared = radius * radius;
+    for (int y = static_cast<int>(top); y < bottom; ++y) {
+        const auto* row = m_mask.constScanLine(y); // Pristup pikselima jednog reda maske.
+        const double dy = pos.y() - std::clamp(pos.y(), double(y), y + 1.0);
+        for (int x = static_cast<int>(left); x < right; ++x) {
+            if (row[x] > 127) {
+                // Prohodan piksel ne može da blokira igrača.
+                continue;
             }
-            p = best;
-        }
-        m_spawnPoints.append(p);
-    }
 
-    // ---- stanice: svaka nova je sto dalje od vec izabranih --------------
-    QRandomGenerator rng(MAP_SEED);
-    m_stations.append(candidates[rng.bounded(candidates.size())]);
-    while (m_stations.size() < STATION_COUNT &&
-           m_stations.size() < candidates.size()) {
-        QPointF best;
-        double bestDist = -1.0;
-        for (const QPointF& c : candidates) {
-            double nearest = std::numeric_limits<double>::max();
-            for (const QPointF& s : m_stations) {
-                nearest = qMin(nearest, QLineF(c, s).length());
+            // Najbliža tačka na pikselu zida otkriva da li ga krug preseca.
+            const double dx = pos.x() - std::clamp(pos.x(), double(x), x + 1.0);
+            if (dx * dx + dy * dy < radiusSquared) {
+                return false;
             }
-            if (nearest > bestDist) {
-                bestDist = nearest;
-                best = c;
-            }
-        }
-        m_stations.append(best);
-    }
-    return true;
-}
-
-bool GameMap::isWalkable(const QPointF& pos, double radius) const
-{
-    if (m_mask.isNull()) {
-        return true;              // mapa jos nije ucitana - nema zidova
-    }
-
-    // Proveravamo centar i 8 tacaka na obodu kruga.
-    for (int i = -1; i < 8; ++i) {
-        QPointF p = pos;
-        if (i >= 0) {
-            const double a = i * M_PI / 4.0;
-            p += QPointF(radius * qCos(a), radius * qSin(a));
-        }
-        const int x = qRound(p.x());
-        const int y = qRound(p.y());
-        if (x < 0 || y < 0 || x >= m_mask.width() || y >= m_mask.height()) {
-            return false;         // van mape
-        }
-        if (m_mask.constScanLine(y)[x] <= 128) {
-            return false;         // crno = zid
         }
     }
     return true;
 }
 
+// Vraća pozadinu koju UI koristi za prikaz mape.
 QPixmap GameMap::background() const
 {
     return m_background;
 }
 
+// Vraća širinu i visinu učitane pozadine u pikselima.
 QSize GameMap::size() const
 {
     return m_background.size();
 }
 
+// Vraća početne pozicije sa kojih igrači mogu da krenu.
 QVector<QPointF> GameMap::spawnPoints() const
 {
     return m_spawnPoints;
 }
 
+// Vraća pozicije stanica na kojima se izvršavaju zadaci.
 QVector<QPointF> GameMap::taskStations() const
 {
     return m_stations;
