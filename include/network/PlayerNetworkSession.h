@@ -15,7 +15,7 @@ struct PlayerNetworkSession
     //Bez tokena bi neko mogao samo da napiše "playerId": 3 i pokuša da
     //šalje kretanje kao igrač 3. Token je tajna oznaka sesije; ne šifruje poruku.
     QString udpToken;
-    quint32 m_lastReceivedTick;
+    quint32 last_move_tick;
 };
 
 #endif // PLAYERNETWORKSESSION_H
