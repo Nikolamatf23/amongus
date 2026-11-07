@@ -17,5 +17,6 @@ enum class MessageType
     UdpRegister,
     UdpRegistered,
     PositionSnapshot,
+    EmergencyMeeting,
     Invalid
 };

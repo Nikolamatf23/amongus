@@ -2,71 +2,88 @@
 #define CLIENTCONTROLLER_H
 
 #include <QObject>
+#include <QPointF>
 #include <QString>
 #include <QJsonObject>
 
+#include "game/ChatMessage.h"
+#include "game/GameTypes.h"
 #include "network/Message.h"
 
 class Client;
+class GameState;
 
-// Klijentski "mozak": sedi izmedju Client (mreza) i UI-ja / lokalnog stanja igre.
-//  - UI poziva njegove metode (sendMove, requestKill, sendVote...)
-//  - on pravi odgovarajuci Message i salje ga preko Client-a
-//  - poruke sa servera pretvara u signale koje UI/GameState slusa
-// Ne zna nista o transportu (TCP/UDP) - to resava Client.
+// Klijentski kontroler (dijagram: ClientController).
+// Ništa ne odlučuje: UI-jeve akcije pretvara u Message i šalje preko Client-a,
+// a poruke sa servera upisuje u lokalnu kopiju GameState-a i javlja UI-ju
+// signalima. Ne zna za transport (TCP/UDP) - to radi Client.
 class ClientController : public QObject
 {
     Q_OBJECT
 
 public:
-    // Client ne posedujemo, samo ga koristimo (vlasnik je npr. MainWindow).
-    explicit ClientController(Client* client, QObject* parent = nullptr);
+    // Client i GameState NE posedujemo (vlasnik je MainWindow).
+    ClientController(Client* client,
+                     GameState* state,
+                     QObject* parent = nullptr);
 
-    // Otvara TCP vezu; Join se salje automatski cim se veza uspostavi.
+    // ---- veza ----
+    // Otvara TCP; Join se šalje automatski kad se veza uspostavi.
     void connectToServer(const QString& host,
                          quint16 tcpPort,
-                         const QString& playerName);
+                         const QString& name);
     void disconnectFromServer();
 
-    bool isConnected() const;
-    int myId() const;               // -1 dok ne stigne JoinAccepted
-
-    // ---- akcije igraca (UI ih poziva) ----
-    void sendMove(double dx, double dy);   // UDP preko Client-a
-    void requestKill(int targetId);
+    // ---- akcije igrača (UI ih poziva) ----
+    void requestStart();                    // samo host (server proverava)
+    void sendMoveInput(const QPointF& dir); // ide preko UDP-a
+    void requestKill(int victimId);
     void reportBody(int bodyId);
+    void requestEmergency();                // emergency dugme u cafeteriji
     void completeTask(int taskId);
-    void sendVote(int targetId);           // -1 = skip
+    void castVote(int targetId);            // -1 = Skip
     void sendChat(const QString& text);
 
-signals:
-    // ---- veza ----
-    void connectedToServer();
-    void disconnectedFromServer();
-    void joined(int myId);                 // stigao JoinAccepted
-    void errorOccurred(const QString& text);
+    // ---- stanje za UI ----
+    const GameState* state() const;
+    int  myId() const;
+    bool isConnected() const;
 
-    // ---- dogadjaji iz igre (sadrzaj je JSON koji salje GameController) ----
-    void lobbyUpdated(const QJsonObject& content);
-    void gameStarted(const QJsonObject& content);
-    void stateSnapshotReceived(const QJsonObject& content);
-    void positionsReceived(const QJsonObject& content);   // UDP
-    void phaseChanged(int phaseId, const QJsonObject& content);
-    void chatReceived(int senderId, const QString& text);
-    void voteResultReceived(const QJsonObject& content);
-    void gameOver(const QJsonObject& content);
+    // Server računa, klijent samo prikazuje (stiže u StateSnapshot-u).
+    int  nearTaskId() const;        // -1 ako nema taska u dometu
+    bool canKill() const;
+    bool canCallEmergency() const;  // blizu stola i još nije iskorišćeno
+    int  phaseSeconds() const;      // trajanje faze (npr. 180 za glasanje)
+
+signals:
+    void lobbyChanged();
+    void stateChanged();
+    void phaseChanged(GamePhase ph);
+    void chatReceived(const ChatMessage& msg);
+    void voteResult(int ejectedId, bool wasImpostor);
+    void gameOver(Winner w);
+    void connectionLost();
+    void errorOccurred(const QString& text);   // za neuspelo povezivanje
 
 private slots:
-    void onConnected();                       // TCP gore -> posalji Join
+    void onConnected();
     void onDisconnected();
-    void onMessage(const Message& msg);       // sve sto stize od servera
+    void onMessage(const Message& msg);
     void onError(const QString& text);
 
 private:
-    void sendMessage(MessageType type, const QJsonObject& content = QJsonObject());
+    void sendMessage(MessageType type,
+                     const QJsonObject& content = QJsonObject());
 
-    Client* m_client;
-    QString m_playerName;
+    Client*    m_client;
+    GameState* m_state;
+    int        m_myId = -1;
+    QString    m_playerName;
+
+    int  m_nearTaskId = -1;
+    bool m_canKill = false;
+    bool m_canEmergency = false;
+    int  m_phaseSeconds = 0;
 };
 
 #endif // CLIENTCONTROLLER_H
