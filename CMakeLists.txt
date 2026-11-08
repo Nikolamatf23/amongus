@@ -16,8 +16,18 @@ set(PROJECT_SOURCES
         src/main.cpp
 
         src/ui/mainwindow.cpp
-        src/ui/mainwindow.ui
+        src/ui/StartScreen.cpp
+        src/ui/LobbyScreen.cpp
+        src/ui/ChatWidget.cpp
+        src/ui/VotingScreen.cpp
+        src/ui/GameOverScreen.cpp
+
         include/ui/mainwindow.h
+        include/ui/StartScreen.h
+        include/ui/LobbyScreen.h
+        include/ui/ChatWidget.h
+        include/ui/VotingScreen.h
+        include/ui/GameOverScreen.h
 
         src/network/Client.cpp
         src/network/ClientConnection.cpp
