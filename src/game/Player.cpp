@@ -2,12 +2,7 @@
 #include "game/Task.h"
 
 #include <QtMath>
-
-namespace
-{
-// Mora da bude isto kao GameController::KILL_COOLDOWN.
-constexpr double KILL_COOLDOWN_SECONDS = 25.0;
-}
+#include <QLineF>
 
 Player::Player(int id, const QString& name, const QColor& color)
     : m_id(id)
@@ -21,13 +16,20 @@ bool Player::isImpostor() const
     return m_role == Role::Impostor;
 }
 
+bool Player::canKill() const
+{
+    return m_alive && isImpostor() && m_killCooldown<=0.0;
+}
 void Player::resetKillCooldown()
 {
-    m_killCooldown = KILL_COOLDOWN_SECONDS;
+    m_killCooldown = KILL_COOLDOWN;
 }
 
 void Player::tickCooldown(double dt)
 {
+    if(dt<=0 || !std::isfinite(dt))
+        return;
+
     m_killCooldown = qMax(0.0, m_killCooldown - dt);
 }
 
@@ -38,15 +40,70 @@ void Player::assignTask(Task* t)
     }
 }
 
+Task* Player:: task(int taskId) const
+{
+    for(Task* t: m_tasks){
+        if(t!=nullptr && t->id()==taskId)
+            return t;
+    }
+
+    return nullptr;
+}
+
+bool Player:: hasTask(int taskId) const
+{
+    return task(taskId)!=nullptr;
+}
+
+
+
 int Player::completedTasks() const
 {
     int count = 0;
     for (const Task* t : m_tasks) {
         if (t != nullptr && t->isCompleted()) {
-            ++count;
+            count++;
         }
     }
     return count;
+}
+
+bool Player::allTasksCompleted() const
+{
+    return completedTasks() == m_tasks.size();
+}
+
+
+double Player::distanceTo(const QPointF& target) const
+{
+    return QLineF(m_pos,target).length();
+}
+
+bool Player::isNear(const QPointF& target, double range) const
+{
+    return distanceTo(target) <= range;
+}
+
+int Player::colorIndex(const QColor& color) const
+{
+    if(color == QColor(Qt::red))    return 0;
+    if(color == QColor(Qt::yellow)) return 1;
+    if(color == QColor("purple")) return 2;
+    if(color == QColor("green")) return 3;
+    if(color == QColor("orange")) return 4;
+    if(color == QColor("black")) return 5;
+    if(color == QColor("white")) return 6;
+    if(color == QColor("pink")) return 7;
+    if(color == QColor("brown")) return 8;
+    if(color == QColor("blue")) return 9;
+    if(color == QColor("palegreen")) return 10;
+    if(color == QColor("cornflowerblue")) return 11;
+    if(color == QColor("lawngreen")) return 13;
+    if(color == QColor("sandybrown")) return 14;
+    if(color == QColor("darkcyan")) return 15;
+
+    return -1;
+
 }
 
 // ---------------------------------------------------------------- getteri

@@ -34,6 +34,25 @@ enum class Winner
     Impostors
 };
 
+// enum class PlayerColor
+// {
+//     Red = 0,
+//     Yellow = 1,
+//     Purple = 2,
+//     Green = 3,
+//     Orange = 4,
+//     Black = 5,
+//     White = 6,
+//     Pink = 7,
+//     Brown = 8,
+//     Blue = 9,
+//     SoftGreen = 10,
+//     SoftBlue = 11,
+//     AppleGreen = 13,
+//     SoftOrange = 14,
+//     BlueGreen = 15
+// };
+
 // Da bi enumi mogli da idu kao parametri signala
 // (npr. ClientController::phaseChanged(GamePhase), gameOver(Winner)).
 Q_DECLARE_METATYPE(Role)

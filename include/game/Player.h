@@ -1,25 +1,6 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-// ============================================================================
-//  Player
-//  Jedan igrac. GameState ih cuva u QMap<int, Player> (4..10 igraca).
-//
-//  Dijagram:
-//    - m_id: int              - m_name: QString       - m_color: QColor
-//    - m_pos: QPointF         - m_inputDir: QPointF   - m_role: Role
-//    - m_alive: bool          - m_killCooldown: double
-//    - m_tasks: QVector<Task*>
-//    + isImpostor(): bool
-//    + resetKillCooldown()
-//    + tickCooldown(dt)
-//    + assignTask(t: Task*)
-//    + completedTasks(): int
-//    + getteri / setteri
-//
-//  m_tasks su samo pokazivaci (agregacija): Player se kopira, pa taskove
-//  ne brise on, nego GameState (u destruktoru i u removePlayer()).
-// ============================================================================
 
 #include "game/GameTypes.h"
 
@@ -33,10 +14,21 @@ class Task;
 class Player
 {
 public:
+
+    // Koliko sekundi impostor ceka izmedju dva ubistva
+    static constexpr double KILL_COOLDOWN=25.0;
+
+    // Poluprecnik igraca u pikselima (za kolizije)
+    static constexpr double RADIUS=20.0;
+
     Player() = default;
-    Player(int id, const QString& name, const QColor& color = QColor());
+    Player(int id, const QString& name, const QColor& color=QColor());
 
     bool isImpostor() const;
+
+    // Impostor koji je i dalje u igri i ciji je cooldown istekao
+    // Domet do mete ce proveriti server
+    bool canKill() const;
 
     // Ponovo pokrece cooldown za ubijanje (posle ubistva).
     void resetKillCooldown();
@@ -44,8 +36,20 @@ public:
     // Smanjuje cooldown za dt sekundi (ne ispod 0).
     void tickCooldown(double dt);
 
+
+    //metode za taskove
     void assignTask(Task* t);
-    int  completedTasks() const;
+    Task* task(int taskId) const;
+    bool hasTask(int taskId) const;
+    int completedTasks() const;
+    bool allTasksCompleted() const;
+
+
+    double distanceTo(const QPointF& point) const;
+    bool isNear(const QPointF& point,double range) const;
+
+
+    int colorIndex(const QColor& color) const;
 
     // ---- getteri ----
     int                   id() const;
