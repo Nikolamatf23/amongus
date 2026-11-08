@@ -59,6 +59,7 @@ void Server::stop()
 
     m_players.clear();
     m_phaseId = 0;
+    m_hostId = -1;
 }
 bool Server::trySendWithUdp(
     const Message& msg,
