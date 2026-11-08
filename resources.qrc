@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/players">
-        <file alias="tripulantes.png">resources/tripulantes.png</file>
-        <file alias="tripulante.png">resources/tripulante.png</file>
+        <file alias="tripulantes.png">resources/players/tripulantes.png</file>
+        <file alias="tripulante.png">resources/players/tripulante.png</file>
     </qresource>
 </RCC>
