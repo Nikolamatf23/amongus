@@ -468,6 +468,9 @@ void GameController::handleReport(int playerId, const Message& msg)
         if (body.victimId() != bodyId) {
             continue;
         }
+        if (QLineF(player->pos(), body.pos()).length() > REPORT_RANGE) {
+            return;   // igrac je predaleko od tela
+        }
         startMeeting(playerId, bodyId);
         return;
     }
@@ -865,6 +868,20 @@ void GameController::sendSnapshot()
             }
         }
 
+        int nearBodyId = -1;
+        double bestBody = REPORT_RANGE;
+
+        if (isPlaying && receiver.isAlive()) {
+            for (const DeadBody& body : m_state->bodies()) {
+                const double d = QLineF(receiver.pos(), body.pos()).length();
+                if (d <= bestBody) {
+                    bestBody = d;
+                    nearBodyId = body.victimId();
+                }
+            }
+        }
+
+        content["nearBodyId"] = nearBodyId;
         content["killTargetId"] = killTargetId;
         content["nearTaskId"] = nearTaskId;
         content["canEmergency"] = canCallEmergency(receiver.id());

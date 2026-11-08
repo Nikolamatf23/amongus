@@ -68,14 +68,26 @@ void ClientController::sendMoveInput(const QPointF& dir)
     sendMessage(MessageType::MoveInput, {{"dx", dir.x()}, {"dy", dir.y()}});
 }
 
-void ClientController::requestKill(int victimId)
+void ClientController::requestKill()
 {
-    sendMessage(MessageType::KillRequest, {{"targetId", victimId}});
+    if (m_killTargetId < 0) {
+        return;
+    }
+    sendMessage(MessageType::KillRequest, {{"targetId", m_killTargetId}});
+    m_killTargetId = -1;   // sprecava dupli klik pre sledeceg snapshota
 }
 
-void ClientController::reportBody(int bodyId)
+bool ClientController::canKill() const { return m_killTargetId >= 0; }
+
+bool ClientController::canReport() const { return m_nearBodyId >= 0; }
+
+void ClientController::reportBody()
 {
-    sendMessage(MessageType::ReportBody, {{"bodyId", bodyId}});
+    if (m_nearBodyId < 0) {
+        return;
+    }
+    sendMessage(MessageType::ReportBody, {{"bodyId", m_nearBodyId}});
+    m_nearBodyId = -1;   // sprecava dupli klik
 }
 
 void ClientController::requestEmergency()
@@ -148,6 +160,7 @@ void ClientController::onMessage(const Message& msg)
     case MessageType::StateSnapshot:
         // Sadržaj = GameState::toJson() + podaci za HUD (računa server).
         m_state->fromJson(content);
+            m_nearBodyId = content.value("nearBodyId").toInt(-1);
         m_nearTaskId    = content.value("nearTaskId").toInt(-1);
         m_killTargetId       = content.value("killTargetId").toInt(-1);
         m_canEmergency  = content.value("canEmergency").toBool(false);

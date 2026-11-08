@@ -39,6 +39,8 @@ private:
     static constexpr double TASK_RANGE         = 70.0;  // px
     static constexpr double KILL_RANGE         = 65.0;  // px
     static constexpr double KILL_COOLDOWN      = 25.0;  // sekundi
+    static constexpr double REPORT_RANGE = 70.0;  // px
+
 
     static constexpr double MOVE_SPEED         = 180.0; // px/s
     static constexpr double DISCUSSION_TIME    = 30.0;  // sekundi

@@ -37,8 +37,10 @@ public:
     // ---- akcije igrača (UI ih poziva) ----
     void requestStart();                    // samo host (server proverava)
     void sendMoveInput(const QPointF& dir); // ide preko UDP-a
-    void requestKill(int victimId);
-    void reportBody(int bodyId);
+    void requestKill();
+    void reportBody();
+    bool canReport() const;   // blizu tela
+    bool canKill() const;
     void requestEmergency();                // emergency dugme u cafeteriji
     void completeTask(int taskId);
     void castVote(int targetId);            // -1 = Skip
@@ -81,6 +83,7 @@ private:
     QString    m_playerName;
 
     int  m_nearTaskId = -1;
+    int m_nearBodyId = -1;
     int m_killTargetId = -1;
     bool m_canEmergency = false;
     int  m_phaseSeconds = 0;
