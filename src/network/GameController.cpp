@@ -16,7 +16,7 @@
 #include "game/tasks/WireTask.h"
 
 
-
+#include<iostream>
 
 GameController::GameController(Server* server,
                                GameState* state,
@@ -204,7 +204,7 @@ void GameController::onMessage(int playerId, const Message& msg)
     case MessageType::ChatMessage:
         handleChat(playerId, msg);
         break;
-    case MessageType::StartGame:
+        case MessageType::StartGame:
         handleStartGame(playerId, msg);
         break;
     case MessageType::EmergencyMeeting:
