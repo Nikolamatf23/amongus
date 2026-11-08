@@ -29,6 +29,7 @@ m_voting(nullptr)
     m_emergencyCooldown = 0.0;
     m_tickTimer.setInterval(20);
     m_snapshotTimer.setInterval(50);
+    m_stateSnapshotTimer.setInterval(500);
     m_meetingTimer.setSingleShot(true);
 
     connect(
@@ -51,6 +52,17 @@ m_voting(nullptr)
         &m_snapshotTimer, &QTimer::timeout,
         this, &GameController::sendPositions
     );
+
+    connect(
+    &m_stateSnapshotTimer,
+    &QTimer::timeout,
+    this,
+    [this]() {
+        if (m_state->phase() == GamePhase::Playing) {
+            sendSnapshot();
+        }
+    }
+);
 
     connect(
     &m_meetingTimer, &QTimer::timeout,
@@ -120,6 +132,7 @@ void GameController::startGame()
 
     m_tickTimer.start();
     m_snapshotTimer.start();
+    m_stateSnapshotTimer.start();
 
 };
 
@@ -634,6 +647,7 @@ void GameController::startMeeting(int callerId, int bodyId)
     );
 
     m_state->setPhase(GamePhase::Discussion);
+    m_stateSnapshotTimer.stop();
 
     sendPhaseChanged();
     sendSnapshot();
@@ -723,6 +737,7 @@ void GameController::endMeeting()
 
     sendPhaseChanged();
     sendSnapshot();
+    m_stateSnapshotTimer.start();
 }
 
 void GameController::checkWin()
@@ -746,6 +761,7 @@ void GameController::checkWin()
     m_tickTimer.stop();
     m_snapshotTimer.stop();
     m_meetingTimer.stop();
+    m_stateSnapshotTimer.stop();
 
     // Ako se partija zavrsila tokom sastanka.
     // cak i da nismo nikad dosli do meeting-a gde bismo napravili
@@ -857,8 +873,7 @@ void GameController::sendSnapshot()
 
         content["nearTaskId"] = nearTaskId;
         content["canKill"] = canKill;
-        content["canEmergency"] =
-            canCallEmergency(receiver.id());
+        content["canEmergency"] = canCallEmergency(receiver.id());
 
         m_server->sendTo(
             receiver.id(),
