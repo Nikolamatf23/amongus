@@ -394,3 +394,8 @@ void Server::onPlayerDisconnected(int playerId)
 
     emit playerDisconnected(playerId);
 }
+
+int Server::get_m_phaseId() const
+{
+    return m_phaseId;
+}

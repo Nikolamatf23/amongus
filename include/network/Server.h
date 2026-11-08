@@ -28,7 +28,7 @@ public:
     void kick(int playerId);
     bool trySendWithUdp(const Message& msg, MessageType type, const PlayerNetworkSession& playerNetworkSession);
     bool trySendWithTCP(const Message& msg, MessageType type, const PlayerNetworkSession& playerNetworkSession);
-
+    int get_m_phaseId() const;
 
 signals:
     void messageReceived(int playerId, const Message& msg);
