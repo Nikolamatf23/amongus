@@ -1,6 +1,7 @@
 .Rhistory
 .idea/
 .DS_Store
+.vscode/
 # Build folder
 build/
 cmake-build-*/
