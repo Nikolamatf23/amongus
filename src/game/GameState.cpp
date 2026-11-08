@@ -71,6 +71,11 @@ QJsonObject playerToJson(const Player& p)
 
 // ============================================================================
 
+GameMap* GameState::getMap() const
+{
+    return m_map;
+}
+
 GameState::GameState(GameMap* map)
     : m_map(map)
 {
@@ -87,8 +92,8 @@ GameState::~GameState()
 
 void GameState::addPlayer(const Player& p)
 {
-    if (p.id() < 0 || m_players.contains(p.id()) || m_players.size() >= 10) {
-        return;                                // max 10 igraca (4..10)
+    if (p.id() < 0 || m_players.contains(p.id()) || m_players.size() >= 16) {
+        return;                                // max 16 igraca (4..16)
     }
     Player copy = p;
     // Novi igrac se pojavljuje na sledecoj spawn tacki mape.

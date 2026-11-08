@@ -87,3 +87,20 @@ int VotingSession::tally() const
     }
     return best;   // ako je pobedio Skip, best je vec -1
 }
+
+void VotingSession::removePlayer(int playerId)
+{
+    m_eligible.remove(playerId);
+    m_votes.remove(playerId);
+
+    // Ponistavamo glasove za igraca koji je otisao.
+    // Ti glasaci mogu ponovo da glasaju.
+    for (auto it = m_votes.begin(); it != m_votes.end();) {
+        if (it.value() == playerId) {
+            it = m_votes.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+}

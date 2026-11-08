@@ -74,6 +74,10 @@ public:
     QJsonObject toJson() const;
     void        fromJson(const QJsonObject& obj);
 
+    //dodao sam getter jer ne mogu nikako drugacije
+    //da dobijem map a treba mi za lokacije taskova u assignTasks
+    GameMap* getMap() const;
+
 private:
     QMap<int, Player>  m_players;
     QVector<DeadBody>  m_bodies;

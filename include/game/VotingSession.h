@@ -50,6 +50,8 @@ public:
     // ID izbacenog igraca, ili -1 (nereseno, Skip pobedio, niko nije glasao).
     int tally() const;
 
+    void removePlayer(int playerId);
+
 private:
     int                  m_callerId;
     int                  m_bodyId;

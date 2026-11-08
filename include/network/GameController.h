@@ -5,6 +5,7 @@
 #include <QTimer>
 
 #include "network/Message.h"
+#include <QElapsedTimer>
 
 class Server;
 class GameState;
@@ -32,8 +33,20 @@ private slots:
     void tick();
     void sendPositions();
     void endMeeting();
+    void onMeetingTimeout();
 
 private:
+    static constexpr double TASK_RANGE         = 70.0;  // px
+    static constexpr double KILL_RANGE         = 65.0;  // px
+    static constexpr double KILL_COOLDOWN      = 25.0;  // sekundi
+
+    static constexpr double MOVE_SPEED         = 180.0; // px/s
+    static constexpr double DISCUSSION_TIME    = 30.0;  // sekundi
+    static constexpr double VOTING_TIME        = 45.0;  // sekundi
+
+    static constexpr double EMERGENCY_RANGE    = 70.0;  // px
+    static constexpr double EMERGENCY_COOLDOWN = 30.0;  // sekundi
+
     void handleJoin(int playerId, const Message& msg);
     void handleMove(int playerId, const Message& msg);
     void handleKill(int playerId, const Message& msg);
@@ -42,6 +55,8 @@ private:
     void handleVote(int playerId, const Message& msg);
     void handleEmergencyMeeting(int playerId, const Message& msg);
     void handleChat(int playerId, const Message& msg);
+    void handleEmergency(int playerId, const Message& msg);
+    bool canCallEmergency(int playerId);
 
     void assignRoles();
     void assignTasks();
@@ -60,6 +75,15 @@ private:
     QTimer m_tickTimer;
     QTimer m_snapshotTimer;
     QTimer m_meetingTimer;
+    //uvodim i m_tickClock, meri proteklo vreme za računanje dt - vreme koje je prošlo od
+    //prethodnog poziva tick(), izraženo u sekundama.
+    QElapsedTimer m_tickClock;
+
+    quint32 m_positionSnapshotTick = 0;
+
+    double m_emergencyCooldown;
+
+
 };
 
 #endif // GAMECONTROLLER_H
