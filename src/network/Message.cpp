@@ -53,15 +53,9 @@ Message Message::fromBytes(const QByteArray& bytes)
     QJsonObject jsonObject =
         document.object();
 
-    // Polje "type" mora postojati i biti ceo broj.
-    // Bez ove provere bi poruka bez tipa postala Join (vrednost 0).
-    const QJsonValue typeValue = jsonObject.value("type");
-
-    if (!typeValue.isDouble()) {
-        return Message(MessageType::Invalid);
-    }
-
-    const int rawType = typeValue.toInt(-1);
+    // Ako polja "type" nema ili nije ceo broj, toInt(-1) vraca -1.
+    // Bez rezervne vrednosti -1 dobili bismo 0, a to je Join.
+    const int rawType = jsonObject.value("type").toInt(-1);
 
     // Invalid je poslednji u enumu, pa je njegova vrednost
     // ujedno broj svih pravih tipova.
