@@ -399,3 +399,27 @@ int Server::get_m_phaseId() const
 {
     return m_phaseId;
 }
+
+bool Server::setHostId(int playerId)
+{
+    // Host mora imati postojecu mrežnu sesiju.
+    // Vec izabranog hosta ne prepisujemo.
+    if (m_hostId != -1 || !m_players.contains(playerId)) {
+        return false;
+    }
+
+    m_hostId = playerId;
+    return true;
+}
+
+int Server::hostId() const
+{
+    return m_hostId;
+}
+
+bool Server::isHost(int playerId) const
+{
+    return m_hostId != -1 &&
+           playerId == m_hostId &&
+           m_players.contains(playerId);
+}

@@ -155,6 +155,15 @@ void GameController::assignRoles()
         );
     }
 }
+void GameController::handleStartGame( int playerId, const Message& msg)
+{
+    if (!m_server->isHost(playerId) ||
+        m_state->player(playerId) == nullptr) {
+        return;
+        }
+
+    startGame();
+}
 
 
 void GameController::onMessage(int playerId, const Message& msg)
@@ -181,6 +190,9 @@ void GameController::onMessage(int playerId, const Message& msg)
         break;
     case MessageType::ChatMessage:
         handleChat(playerId, msg);
+        break;
+    case MessageType::StartGame:
+        handleStartGame(playerId, msg);
         break;
     case MessageType::EmergencyMeeting:
         //on ce prvo pozvati canCallEmergency
@@ -385,12 +397,21 @@ void GameController::handleKill(int playerId, const Message& msg)
     const QJsonObject content = incoming.get_messageContent();
     const int targetId = content.value("targetId").toInt(-1);
 
+    Player* killer = m_state->player(playerId);
     Player* target = m_state->player(targetId);
+
+    bool canKill = false;
+
+    const double distance = QLineF(killer->pos(), target->pos()).length();
+
+    if (distance <= KILL_RANGE) {
+        canKill = true;
+    }
 
     if (target == nullptr ||
         targetId == playerId ||
         !target->isAlive() ||
-        target->isImpostor())
+        target->isImpostor() || !canKill)
     {
         return;
     }
@@ -755,7 +776,7 @@ void GameController::sendSnapshot()
         QJsonArray visiblePlayers;
 
         // Pripremamo podatke koje ovaj primalac sme da vidi.
-        // prvo gledamo svakom igracku spakujemo spisak svih igraca i njihovih rolova ako su
+        // prvo gledamo svakom igracu spakujemo spisak svih igraca i njihovih rolova ako su
         // istom timu onaj kome saljemo i onaj kog obradjujemo
         for (const QJsonValue& value : allPlayers) {
             QJsonObject playerJson = value.toObject();

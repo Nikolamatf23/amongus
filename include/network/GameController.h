@@ -57,6 +57,7 @@ private:
     void handleChat(int playerId, const Message& msg);
     void handleEmergency(int playerId, const Message& msg);
     bool canCallEmergency(int playerId);
+    void handleStartGame(int playerId, const Message& msg);
 
     void assignRoles();
     void assignTasks();

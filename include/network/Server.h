@@ -30,6 +30,10 @@ public:
     bool trySendWithTCP(const Message& msg, MessageType type, const PlayerNetworkSession& playerNetworkSession);
     int get_m_phaseId() const;
 
+    bool setHostId(int playerId);
+    int hostId() const;
+    bool isHost(int playerId) const;
+
 signals:
     void messageReceived(int playerId, const Message& msg);
     void playerConnected(int playerId);
@@ -41,6 +45,8 @@ private slots:
     void onPlayerDisconnected(int playerId);
 
 private:
+    int m_hostId = -1;
+
     QTcpServer m_tcp;
     QUdpSocket m_udp;
 
