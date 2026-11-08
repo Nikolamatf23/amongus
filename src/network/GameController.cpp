@@ -29,7 +29,7 @@ m_voting(nullptr)
     m_emergencyCooldown = 0.0;
     m_tickTimer.setInterval(20);
     m_snapshotTimer.setInterval(50);
-    m_stateSnapshotTimer.setInterval(100);
+    m_stateSnapshotTimer.setInterval(500);
     m_meetingTimer.setSingleShot(true);
 
     connect(
@@ -852,8 +852,7 @@ void GameController::sendSnapshot()
 
         content["nearTaskId"] = nearTaskId;
         content["canKill"] = canKill;
-        content["canEmergency"] =
-            canCallEmergency(receiver.id());
+        content["canEmergency"] = canCallEmergency(receiver.id());
 
         m_server->sendTo(
             receiver.id(),
