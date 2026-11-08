@@ -30,7 +30,7 @@ void ClientController::connectToServer(const QString& host,
     m_playerName = name;          // Join šaljemo tek kad TCP bude gotov
     m_myId = -1;
     m_nearTaskId = -1;
-    m_canKill = false;
+    m_killTargetId = -1;
     m_canEmergency = false;
     m_client->connectToHost(host, tcpPort);
 }
@@ -113,7 +113,7 @@ const GameState* ClientController::state() const { return m_state; }
 int  ClientController::myId() const              { return m_myId; }
 bool ClientController::isConnected() const       { return m_client->isConnected(); }
 int  ClientController::nearTaskId() const        { return m_nearTaskId; }
-bool ClientController::canKill() const           { return m_canKill; }
+int ClientController::killTargetId() const           { return m_killTargetId; }
 bool ClientController::canCallEmergency() const  { return m_canEmergency; }
 int  ClientController::phaseSeconds() const      { return m_phaseSeconds; }
 
@@ -149,7 +149,7 @@ void ClientController::onMessage(const Message& msg)
         // Sadržaj = GameState::toJson() + podaci za HUD (računa server).
         m_state->fromJson(content);
         m_nearTaskId    = content.value("nearTaskId").toInt(-1);
-        m_canKill       = content.value("canKill").toBool(false);
+        m_killTargetId       = content.value("killTargetId").toInt(-1);
         m_canEmergency  = content.value("canEmergency").toBool(false);
         emit stateChanged();
         break;

@@ -51,7 +51,7 @@ public:
 
     // Server računa, klijent samo prikazuje (stiže u StateSnapshot-u).
     int  nearTaskId() const;        // -1 ako nema taska u dometu
-    bool canKill() const;
+    int killTargetId() const;
     bool canCallEmergency() const;  // blizu stola i još nije iskorišćeno
     int  phaseSeconds() const;      // trajanje faze (npr. 180 za glasanje)
 
@@ -81,7 +81,7 @@ private:
     QString    m_playerName;
 
     int  m_nearTaskId = -1;
-    bool m_canKill = false;
+    int m_killTargetId = -1;
     bool m_canEmergency = false;
     int  m_phaseSeconds = 0;
 };

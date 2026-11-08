@@ -29,7 +29,7 @@ m_voting(nullptr)
     m_emergencyCooldown = 0.0;
     m_tickTimer.setInterval(20);
     m_snapshotTimer.setInterval(50);
-    m_stateSnapshotTimer.setInterval(500);
+    m_stateSnapshotTimer.setInterval(200);
     m_meetingTimer.setSingleShot(true);
 
     connect(
@@ -846,33 +846,27 @@ void GameController::sendSnapshot()
         //Ako zadržiš canKill u snapshotu, UI pročita tu vrednost:
         // - true → omogući Kill dugme.
         // - false → onemogući ga
-        bool canKill = false;
+        // GameController::sendSnapshot()
+        int killTargetId = -1;
+        double best = KILL_RANGE;
 
-        if (isPlaying &&
-            receiver.isAlive() &&
-            receiver.isImpostor() &&
-            receiver.killCooldown() <= 0.0)
+        if (isPlaying && receiver.isAlive() && receiver.isImpostor()
+            && receiver.killCooldown() <= 0.0)
         {
             for (const Player& target : players) {
-                if (target.id() == receiver.id() ||
-                    !target.isAlive() ||
-                    target.isImpostor())
-                {
+                if (target.id() == receiver.id() || !target.isAlive() || target.isImpostor())
                     continue;
-                }
 
-                const double distance =
-                    QLineF(receiver.pos(), target.pos()).length();
-
-                if (distance <= KILL_RANGE) {
-                    canKill = true;
-                    break;
+                const double d = QLineF(receiver.pos(), target.pos()).length();
+                if (d <= best) {
+                    best = d;
+                    killTargetId = target.id();   // najbliža meta, ne prva
                 }
             }
         }
 
+        content["killTargetId"] = killTargetId;
         content["nearTaskId"] = nearTaskId;
-        content["canKill"] = canKill;
         content["canEmergency"] = canCallEmergency(receiver.id());
 
         m_server->sendTo(
