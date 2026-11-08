@@ -73,7 +73,8 @@ private:
     VotingSession* m_voting = nullptr;
 
     QTimer m_tickTimer;
-    QTimer m_snapshotTimer;
+    QTimer m_snapshotTimer; // PositionSnapshot: 50 ms
+    QTimer m_stateSnapshotTimer; // StateSnapshot: 100 ms
     QTimer m_meetingTimer;
     //uvodim i m_tickClock, meri proteklo vreme za računanje dt - vreme koje je prošlo od
     //prethodnog poziva tick(), izraženo u sekundama.
