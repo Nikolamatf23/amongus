@@ -182,10 +182,9 @@ void Client::onReadyRead()
         const QByteArray messageBytes = m_buffer.mid(4, messageSize);
         m_buffer.remove(0, 4 + messageSize);
 
-        // Message::fromBytes pri gresci vraca Join, a server nikad ne
-        // salje Join klijentu, pa to koristimo kao znak neispravne poruke.
+        // Message::fromBytes pri gresci vraca Invalid - takve poruke odbacujemo.
         Message message = Message::fromBytes(messageBytes);
-        if (message.type() == MessageType::Join) {
+        if (message.type() == MessageType::Invalid) {
             continue;
         }
 

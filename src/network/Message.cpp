@@ -48,15 +48,29 @@ Message Message::fromBytes(const QByteArray& bytes)
     if (error.error != QJsonParseError::NoError ||
         !document.isObject()) {
         return Message(MessageType::Invalid);
-    }
+        }
 
     QJsonObject jsonObject =
         document.object();
 
-    MessageType type =
-        static_cast<MessageType>(
-            jsonObject["type"].toInt()
-            );
+    // Polje "type" mora postojati i biti ceo broj.
+    // Bez ove provere bi poruka bez tipa postala Join (vrednost 0).
+    const QJsonValue typeValue = jsonObject.value("type");
+
+    if (!typeValue.isDouble()) {
+        return Message(MessageType::Invalid);
+    }
+
+    const int rawType = typeValue.toInt(-1);
+
+    // Invalid je poslednji u enumu, pa je njegova vrednost
+    // ujedno broj svih pravih tipova.
+    if (rawType < 0 ||
+        rawType >= static_cast<int>(MessageType::Invalid)) {
+        return Message(MessageType::Invalid);
+        }
+
+    MessageType type = static_cast<MessageType>(rawType);
 
     QJsonObject messageContent =
         jsonObject["messageContent"].toObject();
