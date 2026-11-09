@@ -98,6 +98,11 @@ void GameScreen::setupUi()
     m_reportButton = new QPushButton(tr("Report"), this);
     m_emergencyButton = new QPushButton(tr("Emergency"), this);
 
+    m_useButton->setFocusPolicy(Qt::NoFocus);
+    m_killButton->setFocusPolicy(Qt::NoFocus);
+    m_reportButton->setFocusPolicy(Qt::NoFocus);
+    m_emergencyButton->setFocusPolicy(Qt::NoFocus);
+
     auto* buttonsLayout = new QHBoxLayout;
     buttonsLayout->addWidget(m_useButton);
     buttonsLayout->addWidget(m_killButton);

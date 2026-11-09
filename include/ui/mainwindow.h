@@ -28,6 +28,7 @@ class QStackedWidget;
 
 class StartScreen;
 class LobbyScreen;
+class GameScreen;
 class VotingScreen;
 class GameOverScreen;
 
@@ -71,9 +72,12 @@ private:
     QStackedWidget* m_stack;
     StartScreen*    m_start;
     LobbyScreen*    m_lobby;
-    QWidget*        m_game;     // TODO: zameniti sa GameScreen
     VotingScreen*   m_voting;
     GameOverScreen* m_over;
+
+    // GameScreen drzi pokazivac na ClientController, pa se pravi i brise
+    // zajedno sa klijentskom sesijom (createClientSession / destroyClientSession).
+    GameScreen*     m_game = nullptr;
 
     // ---- klijent (svaki igrac) ----
     std::unique_ptr<Client>           m_client;

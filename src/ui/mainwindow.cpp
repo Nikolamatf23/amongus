@@ -2,6 +2,7 @@
 
 #include "ui/ChatWidget.h"
 #include "ui/GameOverScreen.h"
+#include "ui/GameScreen.h"
 #include "ui/LobbyScreen.h"
 #include "ui/StartScreen.h"
 #include "ui/VotingScreen.h"
@@ -13,33 +14,24 @@
 #include "network/GameController.h"
 #include "network/Server.h"
 
-#include <QLabel>
 #include <QMessageBox>
 #include <QStackedWidget>
-#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , m_stack(new QStackedWidget(this))
     , m_start(new StartScreen(m_stack))
     , m_lobby(new LobbyScreen(m_stack))
-    , m_game(new QWidget(m_stack))
     , m_voting(new VotingScreen(m_stack))
     , m_over(new GameOverScreen(m_stack))
 {
     setWindowTitle(tr("Among Us"));
     resize(1024, 720);
 
-    // TODO: zameniti sa GameScreen kad bude gotov:
-    //   m_game = new GameScreen(m_ctrl.get(), m_stack);
-    auto* placeholder = new QLabel(tr("GameScreen - TODO"), m_game);
-    placeholder->setAlignment(Qt::AlignCenter);
-    auto* gameLayout = new QVBoxLayout(m_game);
-    gameLayout->addWidget(placeholder);
-
+    // GameScreen se ne pravi ovde: treba mu ClientController, a on postoji
+    // tek posle createClientSession(). Tamo se GameScreen pravi i ubacuje u stack.
     m_stack->addWidget(m_start);
     m_stack->addWidget(m_lobby);
-    m_stack->addWidget(m_game);
     m_stack->addWidget(m_voting);
     m_stack->addWidget(m_over);
     setCentralWidget(m_stack);
@@ -82,6 +74,10 @@ void MainWindow::createClientSession()
     m_state  = std::make_unique<GameState>();
     m_ctrl   = std::make_unique<ClientController>(m_client.get(), m_state.get());
 
+    // GameScreen zivi tacno koliko i ova sesija (drzi pokazivac na m_ctrl).
+    m_game = new GameScreen(m_ctrl.get(), m_stack);
+    m_stack->addWidget(m_game);
+
     connect(m_ctrl.get(), &ClientController::lobbyChanged,   this, &MainWindow::onLobbyChanged);
     connect(m_ctrl.get(), &ClientController::phaseChanged,   this, &MainWindow::onPhaseChanged);
     connect(m_ctrl.get(), &ClientController::gameOver,       this, &MainWindow::onGameOver);
@@ -96,6 +92,14 @@ void MainWindow::createClientSession()
 
 void MainWindow::destroyClientSession()
 {
+    // GameScreen prvi, jer cita m_ctrl (resizeEvent, updateCamera...).
+    // deleteLater umesto delete: moze da se pozove iz exec() petlje TaskDialog-a.
+    if (m_game) {
+        m_stack->removeWidget(m_game);
+        m_game->deleteLater();
+        m_game = nullptr;
+    }
+
     if (m_ctrl) {
         // Prvo odvezujemo signale, da gasenje veze ne pozove nase slotove.
         m_ctrl->disconnect(this);
@@ -125,7 +129,7 @@ void MainWindow::onHost(const QString& name)
     stopHosting();
 
     // TODO: kad budu dodati resursi mape, ucitati ih ovde:
-    //   m_serverMap->load(":/map/background.png", ":/map/mask.png");
+    //   m_serverMap->load(":/map/background.jpg", ":/map/mask.png");
     m_serverMap   = std::make_unique<GameMap>();
     m_serverState = std::make_unique<GameState>(m_serverMap.get());
     m_server      = std::make_unique<Server>();
@@ -175,7 +179,10 @@ void MainWindow::onPhaseChanged(GamePhase ph)
         break;
 
     case GamePhase::Playing:
-        showScreen(m_game);
+        if (m_game) {
+            showScreen(m_game);
+            m_game->setFocus();   // da WASD radi odmah
+        }
         break;
 
     case GamePhase::Discussion:
