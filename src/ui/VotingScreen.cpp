@@ -78,7 +78,7 @@ void VotingScreen::setup(const QList<Player>& players, int myId, int seconds)
         }
 
         QPixmap swatch(14, 14);
-        swatch.fill(p.color().isValid() ? p.color() : Qt::gray);
+        swatch.fill(Qt::gray);
 
         QString text = p.name();
         if (p.id() == myId)  text += tr(" (ti)");

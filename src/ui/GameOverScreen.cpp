@@ -48,7 +48,7 @@ void GameOverScreen::showResult(Winner w, const QList<Player>& players)
     m_roleList->clear();
     for (const Player& p : players) {
         QPixmap swatch(14, 14);
-        swatch.fill(p.color().isValid() ? p.color() : Qt::gray);
+        swatch.fill(Qt::gray);
 
         QString text = QStringLiteral("%1 - %2")
                            .arg(p.name(),

@@ -4,10 +4,9 @@
 #include <QtMath>
 #include <QLineF>
 
-Player::Player(int id, const QString& name, const QColor& color)
+Player::Player(int id, const QString& name)
     : m_id(id)
     , m_name(name)
-    , m_color(color)
 {
 }
 
@@ -84,33 +83,12 @@ bool Player::isNear(const QPointF& target, double range) const
     return distanceTo(target) <= range;
 }
 
-int Player::colorIndex(const QColor& color) const
-{
-    if(color == QColor(Qt::red))    return 0;
-    if(color == QColor(Qt::yellow)) return 1;
-    if(color == QColor("purple")) return 2;
-    if(color == QColor("green")) return 3;
-    if(color == QColor("orange")) return 4;
-    if(color == QColor("black")) return 5;
-    if(color == QColor("white")) return 6;
-    if(color == QColor("pink")) return 7;
-    if(color == QColor("brown")) return 8;
-    if(color == QColor("blue")) return 9;
-    if(color == QColor("palegreen")) return 10;
-    if(color == QColor("cornflowerblue")) return 11;
-    if(color == QColor("lawngreen")) return 13;
-    if(color == QColor("sandybrown")) return 14;
-    if(color == QColor("darkcyan")) return 15;
-
-    return -1;
-
-}
 
 // ---------------------------------------------------------------- getteri
 
 int                   Player::id() const           { return m_id; }
 QString               Player::name() const         { return m_name; }
-QColor                Player::color() const        { return m_color; }
+int                   Player::skinId() const  { return m_skinId; }
 QPointF               Player::pos() const          { return m_pos; }
 QPointF               Player::inputDir() const     { return m_inputDir; }
 Role                  Player::role() const         { return m_role; }
@@ -121,8 +99,8 @@ const QVector<Task*>& Player::tasks() const        { return m_tasks; }
 // ---------------------------------------------------------------- setteri
 
 void Player::setName(const QString& name)   { m_name = name; }
-void Player::setColor(const QColor& color)  { m_color = color; }
 void Player::setPos(const QPointF& pos)     { m_pos = pos; }
+void Player::setSkinId(int skinId) { m_skinId = skinId; }
 void Player::setRole(Role role)             { m_role = role; }
 void Player::setKillCooldown(double s)      { m_killCooldown = s; }
 void Player::setTasks(const QVector<Task*>& tasks) { m_tasks = tasks; }

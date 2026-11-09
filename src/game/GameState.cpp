@@ -50,7 +50,7 @@ QJsonObject playerToJson(const Player& p)
     QJsonObject obj;
     obj["id"]           = p.id();
     obj["name"]         = p.name();
-    obj["color"]        = p.color().name();
+    obj["skinId"]        = p.skinId();
     obj["x"]            = p.pos().x();
     obj["y"]            = p.pos().y();
     obj["role"]         = static_cast<int>(p.role());
@@ -288,7 +288,7 @@ void GameState::fromJson(const QJsonObject& obj)
             p = Player(id, QString());
         }
         p.setName(pj.value("name").toString());
-        p.setColor(QColor(pj.value("color").toString()));
+        p.setSkinId(pj.value("skinId").toInt());
         p.setPos(QPointF(pj.value("x").toDouble(), pj.value("y").toDouble()));
         p.setRole(static_cast<Role>(pj.value("role").toInt()));
         p.setAlive(pj.value("alive").toBool(true));

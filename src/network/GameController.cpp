@@ -296,11 +296,7 @@ void GameController::handleJoin(int playerId, const Message& msg)
         return;
     }
 
-    QColor playerColor (QRandomGenerator::global()->bounded(256),
-                        QRandomGenerator::global()->bounded(256),
-                        QRandomGenerator::global()->bounded(256));
-
-    Player player(playerId, name, playerColor);
+    Player player(playerId, name);
 
     m_state->addPlayer(player);
 

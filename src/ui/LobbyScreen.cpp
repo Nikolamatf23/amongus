@@ -53,7 +53,7 @@ void LobbyScreen::updatePlayers(const QList<Player>& players)
     m_playerList->clear();
     for (const Player& p : players) {
         QPixmap swatch(14, 14);
-        swatch.fill(p.color().isValid() ? p.color() : Qt::gray);
+        swatch.fill(Qt::gray);
         m_playerList->addItem(new QListWidgetItem(QIcon(swatch), p.name()));
     }
 }

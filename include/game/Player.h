@@ -22,7 +22,7 @@ public:
     static constexpr double RADIUS=20.0;
 
     Player() = default;
-    Player(int id, const QString& name, const QColor& color=QColor());
+    Player(int id, const QString& name);
 
     bool isImpostor() const;
 
@@ -49,13 +49,12 @@ public:
     bool isNear(const QPointF& point,double range) const;
 
 
-    int colorIndex(const QColor& color) const;
 
     // ---- getteri ----
     int                   id() const;
     QString               name() const;
-    QColor                color() const;
     QPointF               pos() const;
+    int                   skinId() const;
     QPointF               inputDir() const;
     Role                  role() const;
     bool                  isAlive() const;
@@ -64,7 +63,7 @@ public:
 
     // ---- setteri ----
     void setName(const QString& name);
-    void setColor(const QColor& color);
+    void setSkinId(int skinId);
     void setPos(const QPointF& pos);
     void setInputDir(const QPointF& dir);
     void setRole(Role role);
@@ -75,7 +74,7 @@ public:
 private:
     int            m_id = -1;
     QString        m_name;
-    QColor         m_color;
+    int            m_skinId = 1;
     QPointF        m_pos;
     QPointF        m_inputDir;
     Role           m_role = Role::Crewmate;
