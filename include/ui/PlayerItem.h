@@ -1,43 +1,58 @@
 #ifndef PLAYERITEM_H
 #define PLAYERITEM_H
 
-#include <QGraphicsItem>
-#include <QString>
-#include <QTimer>
-#include <QPixmap>
-#include <QColor>
 #include <QObject>
-#include <QPainter>
-#include "game/GameTypes.h"
+#include <QGraphicsItem>
+#include <QPixmap>
+#include <QTimer>
+#include <QString>
+#include <QPointF>
+
+class QPainter;
+class QStyleOptionGraphicsItem;
+class QWidget;
 
 class PlayerItem : public QObject, public QGraphicsItem
 {
 public:
-    PlayerItem();
+    explicit PlayerItem(QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
 
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
+    void paint(QPainter* painter,
+               const QStyleOptionGraphicsItem* option,
+               QWidget* widget = nullptr) override;
 
     void setName(const QString& name);
+    void setSkinId(int skinId);
+    void setAlive(bool alive);
+    void setMoving(bool moving);
+    void setDirection(const QPointF& direction);
 
-    //void setColor(ColorIndex color) kada game tim napravi ColorIndex, ovo odkomentarisi;
-    void setColor(const QColor& color); //a ovo obrisi
+    int skinId() const;
+    bool isAlive() const;
+    bool isMoving() const;
 
+private:
+    void loadSkin();
     void updateSprite();
 
-    void setAlive(bool alive);
-
-    void setMoving(bool moving);
-private:
     QString m_name;
-    //ColorIndex m_color odkomentarisi;
-    QColor m_color; //obrisi
-    QPixmap m_sprite;
+
+    int m_skinId = 1;
+
+    QPixmap m_idleSprite;
+    QPixmap m_walkSprites;
+    QPixmap m_deadSprite;
+    QPixmap m_currentSprite;
+
     bool m_alive = true;
-    QTimer m_animationTimer;
-    int m_frameIndex = 0;
     bool m_moving = false;
+    bool m_facingRight = true;
+
+    int m_frameIndex = 0;
+
+    QTimer m_animationTimer;
 };
 
-#endif //PLAYERITEM_H
+#endif // PLAYERITEM_H

@@ -1,6 +1,71 @@
 <RCC>
     <qresource prefix="/players">
-        <file alias="tripulantes.png">resources/players/tripulantes.png</file>
-        <file alias="tripulante.png">resources/players/tripulante.png</file>
+        <file alias="skin01_idle.png">resources/unique_16_with_dead_and_walk_50x50/01_sakura/idle.png</file>
+        <file alias="skin01_walk.png">resources/unique_16_with_dead_and_walk_50x50/01_sakura/walk_2x2.png</file>
+        <file alias="skin01_dead.png">resources/unique_16_with_dead_and_walk_50x50/01_sakura/dead.png</file>
+
+        <file alias="skin02_idle.png">resources/unique_16_with_dead_and_walk_50x50/02_pirate/idle.png</file>
+        <file alias="skin02_walk.png">resources/unique_16_with_dead_and_walk_50x50/02_pirate/walk_2x2.png</file>
+        <file alias="skin02_dead.png">resources/unique_16_with_dead_and_walk_50x50/02_pirate/dead.png</file>
+
+        <file alias="skin03_idle.png">resources/unique_16_with_dead_and_walk_50x50/03_wizard/idle.png</file>
+        <file alias="skin03_walk.png">resources/unique_16_with_dead_and_walk_50x50/03_wizard/walk_2x2.png</file>
+        <file alias="skin03_dead.png">resources/unique_16_with_dead_and_walk_50x50/03_wizard/dead.png</file>
+
+        <file alias="skin04_idle.png">resources/unique_16_with_dead_and_walk_50x50/04_chef/idle.png</file>
+        <file alias="skin04_walk.png">resources/unique_16_with_dead_and_walk_50x50/04_chef/walk_2x2.png</file>
+        <file alias="skin04_dead.png">resources/unique_16_with_dead_and_walk_50x50/04_chef/dead.png</file>
+
+        <file alias="skin05_idle.png">resources/unique_16_with_dead_and_walk_50x50/05_robot/idle.png</file>
+        <file alias="skin05_walk.png">resources/unique_16_with_dead_and_walk_50x50/05_robot/walk_2x2.png</file>
+        <file alias="skin05_dead.png">resources/unique_16_with_dead_and_walk_50x50/05_robot/dead.png</file>
+
+        <file alias="skin06_idle.png">resources/unique_16_with_dead_and_walk_50x50/06_bumblebee/idle.png</file>
+        <file alias="skin06_walk.png">resources/unique_16_with_dead_and_walk_50x50/06_bumblebee/walk_2x2.png</file>
+        <file alias="skin06_dead.png">resources/unique_16_with_dead_and_walk_50x50/06_bumblebee/dead.png</file>
+
+        <file alias="skin07_idle.png">resources/unique_16_with_dead_and_walk_50x50/07_cactus/idle.png</file>
+        <file alias="skin07_walk.png">resources/unique_16_with_dead_and_walk_50x50/07_cactus/walk_2x2.png</file>
+        <file alias="skin07_dead.png">resources/unique_16_with_dead_and_walk_50x50/07_cactus/dead.png</file>
+
+        <file alias="skin08_idle.png">resources/unique_16_with_dead_and_walk_50x50/08_firefighter/idle.png</file>
+        <file alias="skin08_walk.png">resources/unique_16_with_dead_and_walk_50x50/08_firefighter/walk_2x2.png</file>
+        <file alias="skin08_dead.png">resources/unique_16_with_dead_and_walk_50x50/08_firefighter/dead.png</file>
+
+        <file alias="skin09_idle.png">resources/unique_16_with_dead_and_walk_50x50/09_mushroom/idle.png</file>
+        <file alias="skin09_walk.png">resources/unique_16_with_dead_and_walk_50x50/09_mushroom/walk_2x2.png</file>
+        <file alias="skin09_dead.png">resources/unique_16_with_dead_and_walk_50x50/09_mushroom/dead.png</file>
+
+        <file alias="skin10_idle.png">resources/unique_16_with_dead_and_walk_50x50/10_royal/idle.png</file>
+        <file alias="skin10_walk.png">resources/unique_16_with_dead_and_walk_50x50/10_royal/walk_2x2.png</file>
+        <file alias="skin10_dead.png">resources/unique_16_with_dead_and_walk_50x50/10_royal/dead.png</file>
+
+        <file alias="skin11_idle.png">resources/unique_16_with_dead_and_walk_50x50/11_ninja/idle.png</file>
+        <file alias="skin11_walk.png">resources/unique_16_with_dead_and_walk_50x50/11_ninja/walk_2x2.png</file>
+        <file alias="skin11_dead.png">resources/unique_16_with_dead_and_walk_50x50/11_ninja/dead.png</file>
+
+        <file alias="skin12_idle.png">resources/unique_16_with_dead_and_walk_50x50/12_diver/idle.png</file>
+        <file alias="skin12_walk.png">resources/unique_16_with_dead_and_walk_50x50/12_diver/walk_2x2.png</file>
+        <file alias="skin12_dead.png">resources/unique_16_with_dead_and_walk_50x50/12_diver/dead.png</file>
+
+        <file alias="skin13_idle.png">resources/unique_16_with_dead_and_walk_50x50/13_frost/idle.png</file>
+        <file alias="skin13_walk.png">resources/unique_16_with_dead_and_walk_50x50/13_frost/walk_2x2.png</file>
+        <file alias="skin13_dead.png">resources/unique_16_with_dead_and_walk_50x50/13_frost/dead.png</file>
+
+        <file alias="skin14_idle.png">resources/unique_16_with_dead_and_walk_50x50/14_dragon/idle.png</file>
+        <file alias="skin14_walk.png">resources/unique_16_with_dead_and_walk_50x50/14_dragon/walk_2x2.png</file>
+        <file alias="skin14_dead.png">resources/unique_16_with_dead_and_walk_50x50/14_dragon/dead.png</file>
+
+        <file alias="skin15_idle.png">resources/unique_16_with_dead_and_walk_50x50/15_detective/idle.png</file>
+        <file alias="skin15_walk.png">resources/unique_16_with_dead_and_walk_50x50/15_detective/walk_2x2.png</file>
+        <file alias="skin15_dead.png">resources/unique_16_with_dead_and_walk_50x50/15_detective/dead.png</file>
+
+        <file alias="skin16_idle.png">resources/unique_16_with_dead_and_walk_50x50/16_space_ranger/idle.png</file>
+        <file alias="skin16_walk.png">resources/unique_16_with_dead_and_walk_50x50/16_space_ranger/walk_2x2.png</file>
+        <file alias="skin16_dead.png">resources/unique_16_with_dead_and_walk_50x50/16_space_ranger/dead.png</file>
+    </qresource>
+
+    <qresource prefix="/map">
+        <file alias="background.jpg">resources/Mapa/map.jpg</file>
     </qresource>
 </RCC>
