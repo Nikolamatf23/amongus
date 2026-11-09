@@ -1,0 +1,17 @@
+Use case: stylized-concept.
+Asset type: a single production game sprite atlas, transparent PNG, exactly 4 columns and 2 rows of equal square cells, landscape 2:1 aspect ratio.
+Primary request: an Among Us crewmate skin in eight different poses, intended to be exported as individual 50x50 pixel sprites.
+Character: classic compact red Among Us crewmate body, large light blue glass visor, backpack, stubby legs, no visible face, with a small simple green sprout with two leaves on top as the skin accessory. Identical costume, proportions, colors and sprout across all eight poses.
+Style: clean readable 2D cartoon game art with bold very dark outlines, flat red and deep red cel shading and simple visor highlights. Minimal detail so the character remains crisp when each cell is reduced to 50x50 pixels.
+Layout: precise 4 by 2 regular grid with NO drawn grid lines. Each character entirely within its cell, uniformly centered horizontally, same body scale in every cell, generous transparent padding, no overlap. Ordinary standing feet aligned at 88% of each cell height. Whole character including sprout occupies about 78% cell height. All eight cells contain precisely one complete crewmate.
+Cell order left to right, top row then bottom row:
+1. side view facing right, idle standing still, legs together;
+2. side view facing right, walking first stride with forward leg extended and back leg behind;
+3. side view facing right, walking passing pose with one bent knee lifted;
+4. side view facing right, walking opposite stride;
+5. front view, symmetrical visor facing viewer;
+6. back view showing backpack, visor not visible;
+7. three-quarter facing right and waving with one small floating mitten hand beside head;
+8. side view facing right, jumping with both knees bent and feet lifted, no ground.
+Scene/backdrop: true alpha transparency everywhere outside the characters, no floor, no drop shadow.
+Constraints: No text, no labels, no numbers, no watermark, no borders, no decorative elements, no checkerboard background. This is an exact uniform sprite atlas, not a poster or presentation. Preserve true transparency.
