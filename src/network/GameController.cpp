@@ -211,6 +211,9 @@ void GameController::onMessage(int playerId, const Message& msg)
         //on ce prvo pozvati canCallEmergency
         handleEmergency(playerId, msg);
         break;
+        case MessageType::ChooseSkin:
+            handleChooseSkin(playerId, msg);
+            break;
     default:
         break;
 
@@ -333,6 +336,33 @@ void GameController::handleMove(int playerId, const Message& msg)
     }
 
     player->setInputDir(QPointF(dx, dy));
+}
+
+void GameController::handleChooseSkin(int playerId, const Message& msg)
+{
+    if (m_state->phase() != GamePhase::Lobby) {
+        return;
+    }
+
+    Player* player = m_state->player(playerId);
+    if (player == nullptr) {
+        return;
+    }
+
+    Message incoming = msg;
+    const QJsonObject content = incoming.get_messageContent();
+
+    if (!content.value("skinId").isDouble()) {
+        return;
+    }
+
+    const int skinId = content.value("skinId").toInt(1);
+    if (skinId < 1 || skinId > SKIN_COUNT) {
+        return;
+    }
+
+    player->setSkinId(skinId);
+    sendLobbyUpdate();
 }
 
 void GameController::tick()

@@ -39,6 +39,7 @@ public:
     void sendMoveInput(const QPointF& dir); // ide preko UDP-a
     void requestKill();
     void reportBody();
+    void chooseSkin(int skinId);
     bool canReport() const;   // blizu tela
     bool canKill() const;
     void requestEmergency();                // emergency dugme u cafeteriji
@@ -49,6 +50,7 @@ public:
     // ---- stanje za UI ----
     const GameState* state() const;
     int  myId() const;
+    int  mySkinId() const;
     bool isConnected() const;
 
     // Server računa, klijent samo prikazuje (stiže u StateSnapshot-u).

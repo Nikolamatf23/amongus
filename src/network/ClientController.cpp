@@ -68,6 +68,11 @@ void ClientController::sendMoveInput(const QPointF& dir)
     sendMessage(MessageType::MoveInput, {{"dx", dir.x()}, {"dy", dir.y()}});
 }
 
+void ClientController::chooseSkin(int skinId)
+{
+    sendMessage(MessageType::ChooseSkin, {{"skinId", skinId}});
+}
+
 void ClientController::requestKill()
 {
     if (m_killTargetId < 0) {
@@ -123,6 +128,11 @@ void ClientController::sendMessage(MessageType type, const QJsonObject& content)
 
 const GameState* ClientController::state() const { return m_state; }
 int  ClientController::myId() const              { return m_myId; }
+int ClientController::mySkinId() const
+{
+    const Player* me = m_state->player(m_myId);
+    return me ? me->skinId() : 1;
+}
 bool ClientController::isConnected() const       { return m_client->isConnected(); }
 int  ClientController::nearTaskId() const        { return m_nearTaskId; }
 int ClientController::killTargetId() const           { return m_killTargetId; }

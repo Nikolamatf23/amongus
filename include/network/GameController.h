@@ -49,6 +49,10 @@ private:
     static constexpr double EMERGENCY_RANGE    = 70.0;  // px
     static constexpr double EMERGENCY_COOLDOWN = 30.0;  // sekundi
 
+    static constexpr int    SKIN_COUNT         = 16;
+
+
+    void handleChooseSkin(int playerId, const Message& msg);
     void handleJoin(int playerId, const Message& msg);
     void handleMove(int playerId, const Message& msg);
     void handleKill(int playerId, const Message& msg);

@@ -18,5 +18,6 @@ enum class MessageType
     UdpRegistered,
     PositionSnapshot,
     EmergencyMeeting,
+    ChooseSkin,
     Invalid
 };
