@@ -302,6 +302,10 @@ void GameController::handleJoin(int playerId, const Message& msg)
     Player player(playerId, name);
 
     m_state->addPlayer(player);
+    
+    if (m_server->hostId() == -1) {
+        m_server->setHostId(playerId);
+    }
 
     m_server->sendTo(playerId, Message(MessageType::JoinAccepted, QJsonObject{}));
 
