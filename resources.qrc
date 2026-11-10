@@ -67,6 +67,6 @@
 
     <qresource prefix="/map">
         <file alias="background.jpg">resources/Mapa/map.jpg</file>
-        <file alias="mask.png">resources/Mapa/mask_clean_2880x1472.png</file>
+        <file alias="mask.jpg">resources/Mapa/mask.jpg</file>
     </qresource>
 </RCC>
