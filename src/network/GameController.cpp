@@ -27,7 +27,7 @@ m_state(state),
 m_voting(nullptr)
 {
     m_emergencyCooldown = 0.0;
-    m_tickTimer.setInterval(20);
+    m_tickTimer.setInterval(5);
     m_snapshotTimer.setInterval(50);
     m_stateSnapshotTimer.setInterval(200);
     m_meetingTimer.setSingleShot(true);
