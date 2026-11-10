@@ -1,10 +1,5 @@
 #include "game/VotingSession.h"
 
-namespace
-{
-constexpr int SKIP = -1;   // targetId za Skip i povratna vrednost "niko"
-}
-
 VotingSession::VotingSession(int callerId, int bodyId, const QSet<int>& eligible)
     : m_callerId(callerId)
     , m_bodyId(bodyId)
@@ -14,22 +9,22 @@ VotingSession::VotingSession(int callerId, int bodyId, const QSet<int>& eligible
 
 bool VotingSession::castVote(int voterId, int targetId)
 {
-    if (!m_eligible.contains(voterId)) {
-        return false;                       // mrtav ili nije na sastanku
+    if (!m_eligible.contains(voterId) || hasVoted(voterId)) {
+        return false;
     }
-    if (m_votes.contains(voterId)) {
-        return false;                       // glas se ne menja
+
+    // Meta mora biti igrac koji je jos na sastanku. Skip nema metu.
+    if (targetId != Skip && !m_eligible.contains(targetId)) {
+        return false;
     }
-    if (targetId != SKIP && !m_eligible.contains(targetId)) {
-        return false;                       // za mrtvog/nepostojeceg ne moze
-    }
+
     m_votes.insert(voterId, targetId);
     return true;
 }
 
 void VotingSession::skipVote(int voterId)
 {
-    castVote(voterId, SKIP);
+    castVote(voterId, Skip);
 }
 
 bool VotingSession::hasVoted(int id) const
@@ -39,12 +34,9 @@ bool VotingSession::hasVoted(int id) const
 
 bool VotingSession::allVoted() const
 {
-    for (int id : m_eligible) {
-        if (!m_votes.contains(id)) {
-            return false;
-        }
-    }
-    return true;
+    // Svaki igrac koji je jos na sastanku moze imati najvise jedan glas.
+    // Glas igraca koji je otisao uklanja se u removePlayer().
+    return m_votes.size() == m_eligible.size();
 }
 
 void VotingSession::addChat(const ChatMessage& msg)
@@ -61,46 +53,36 @@ QVector<ChatMessage> VotingSession::chatLog() const
 
 int VotingSession::tally() const
 {
-    // 1) Broj glasova po meti (Skip se broji kao meta -1).
+    // Skip brojimo uz ostale opcije. Glasove za igrace koji su otisli
+    // izostavljamo iz rezultata.
     QMap<int, int> counts;
-    for (int target : m_votes) {
-        counts[target] += 1;
-    }
-
-    // 2) Meta sa najvise glasova; pamtimo da li je nereseno.
-    int  best = SKIP;
-    int  bestCount = 0;
-    bool tie = false;
-    for (auto it = counts.cbegin(); it != counts.cend(); ++it) {
-        if (it.value() > bestCount) {
-            best = it.key();
-            bestCount = it.value();
-            tie = false;
-        } else if (it.value() == bestCount) {
-            tie = true;
+    for (int targetId : m_votes) {
+        if (targetId == Skip || m_eligible.contains(targetId)) {
+            ++counts[targetId];
         }
     }
 
-    // 3) Nereseno, Skip pobedio ili niko nije glasao -> niko ne leti.
-    if (bestCount == 0 || tie) {
-        return SKIP;
+    constexpr int NoEjection = -1;
+    int result = NoEjection;
+    int highestCount = 0;
+
+    for (auto it = counts.cbegin(); it != counts.cend(); ++it) {
+        if (it.value() > highestCount) {
+            // Novi maksimum razresava prethodno izjednacenje.
+            highestCount = it.value();
+            result = it.key();
+        } else if (it.value() == highestCount) {
+            result = NoEjection;
+        }
     }
-    return best;   // ako je pobedio Skip, best je vec -1
+
+    return result;
 }
 
 void VotingSession::removePlayer(int playerId)
 {
+    // Ostali glasaci zadrzavaju status da su glasali, jer im UI vec
+    // zakljucava dugmad. tally() izostavlja njihove glasove za ovu metu.
     m_eligible.remove(playerId);
     m_votes.remove(playerId);
-
-    // Ponistavamo glasove za igraca koji je otisao.
-    // Ti glasaci mogu ponovo da glasaju.
-    for (auto it = m_votes.begin(); it != m_votes.end();) {
-        if (it.value() == playerId) {
-            it = m_votes.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
 }
