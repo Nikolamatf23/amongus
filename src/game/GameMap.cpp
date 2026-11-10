@@ -9,11 +9,10 @@ namespace
 // Ove konstante su dostupne samo u ovom .cpp fajlu.
 constexpr double PlacementRadius = 20.0; // Poluprečnik za proveru prostora na početnim pozicijama i stanicama.
 constexpr int PlacementStep = 40;        // Razmak između tačaka koje proveravamo na maski.
-constexpr int MaxSpawnPoints = 10;       // Najveći broj početnih pozicija.
 constexpr int MaxTaskStations = 12;      // Najveći broj stanica za zadatke.
 }
 
-// Učitava slike i priprema privremeni raspored početnih pozicija i stanica.
+// Učitava slike i priprema početne pozicije i stanice za zadatke.
 bool GameMap::load(const QString& backgroundPath, const QString& maskPath)
 {
     // Učitavanje u privremeni objekat čuva prethodnu mapu ako učitavanje ne uspe.
@@ -31,8 +30,7 @@ bool GameMap::load(const QString& backgroundPath, const QString& maskPath)
         return false;
     }
 
-    // Na mreži tačaka zadržavamo one na kojima ima prostora za igrača.
-    // Ovo je privremeni raspored dok ne dobijemo koordinate za konkretnu mapu.
+    // Prohodne tačke sa mreže koristimo za privremeni raspored stanica.
     QVector<QPointF> candidates;
     for (int y = PlacementStep / 2; y < mask.height(); y += PlacementStep) {
         for (int x = PlacementStep / 2; x < mask.width(); x += PlacementStep) {
@@ -49,18 +47,22 @@ bool GameMap::load(const QString& backgroundPath, const QString& maskPath)
         loaded.m_stations.append(candidates.at(i * candidates.size() / stationCount));
     }
 
-    // Sortiramo po kvadratu udaljenosti od centra da bismo tu grupisali spawn tačke.
-    const QPointF center(mask.width() / 2.0, mask.height() / 2.0);
-    std::stable_sort(candidates.begin(), candidates.end(),
-                     [center](const QPointF& a, const QPointF& b) {
-        const QPointF first = a - center;
-        const QPointF second = b - center;
-        return QPointF::dotProduct(first, first) < QPointF::dotProduct(second, second);
-    });
-
-    // Uzimamo do deset najbližih tačaka. Ako ih nema, lista ostaje prazna.
-    const auto spawnCount = std::min<qsizetype>(MaxSpawnPoints, candidates.size());
-    loaded.m_spawnPoints = candidates.mid(0, spawnCount);
+    // Pozicije oko centralnog stola, u pikselima originalne mape.
+    if (mask.size() == QSize(2880, 1472)) {
+        const QVector<QPointF> spawnPoints{
+            {1540, 305}, // gore levo
+            {1752, 305}, // gore desno
+            {1767, 365}, // desno
+            {1692, 458}, // dole desno
+            {1600, 458}, // dole levo
+            {1525, 365}, // levo
+        };
+        for (const QPointF& position : spawnPoints) {
+            if (loaded.isWalkable(position, PlacementRadius)) {
+                loaded.m_spawnPoints.append(position);
+            }
+        }
+    }
 
     // Tek nakon uspešnog učitavanja preuzimamo sve podatke nove mape.
     *this = std::move(loaded);

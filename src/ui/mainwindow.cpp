@@ -128,9 +128,13 @@ void MainWindow::onHost(const QString& name)
 {
     stopHosting();
 
-    // TODO: kad budu dodati resursi mape, ucitati ih ovde:
-    //   m_serverMap->load(":/map/background.jpg", ":/map/mask.png");
-    m_serverMap   = std::make_unique<GameMap>();
+    m_serverMap = std::make_unique<GameMap>();
+    if (!m_serverMap->load(":/map/background.jpg", ":/map/mask.png")) {
+        m_serverMap.reset();
+        QMessageBox::warning(this, tr("Greska"), tr("Mapa ne moze da se ucita."));
+        return;
+    }
+
     m_serverState = std::make_unique<GameState>(m_serverMap.get());
     m_server      = std::make_unique<Server>();
     m_gameCtrl    = std::make_unique<GameController>(m_server.get(), m_serverState.get());
