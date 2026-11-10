@@ -167,15 +167,14 @@ void ClientController::onMessage(const Message& msg)
         emit phaseChanged(m_state->phase());
         break;
 
-    case MessageType::StateSnapshot:
-        // Sadržaj = GameState::toJson() + podaci za HUD (računa server).
-        m_state->fromJson(content);
-            m_nearBodyId = content.value("nearBodyId").toInt(-1);
-        m_nearTaskId    = content.value("nearTaskId").toInt(-1);
-        m_killTargetId       = content.value("killTargetId").toInt(-1);
-        m_canEmergency  = content.value("canEmergency").toBool(false);
-        emit stateChanged();
-        break;
+            case MessageType::StateSnapshot:
+            m_state->fromJson(content, false);
+            m_nearBodyId   = content.value("nearBodyId").toInt(-1);
+            m_nearTaskId   = content.value("nearTaskId").toInt(-1);
+            m_killTargetId = content.value("killTargetId").toInt(-1);
+            m_canEmergency = content.value("canEmergency").toBool(false);
+            emit stateChanged();
+            break;
 
     case MessageType::PositionSnapshot:
         // UDP: menja samo pozicije, nikad uloge, alive ili taskove.

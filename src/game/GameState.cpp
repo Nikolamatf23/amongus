@@ -255,7 +255,7 @@ QJsonObject GameState::toJson() const
     return obj;
 }
 
-void GameState::fromJson(const QJsonObject& obj)
+void GameState::fromJson(const QJsonObject& obj, bool applyPositions)
 {
     m_phase      = static_cast<GamePhase>(obj.value("phase").toInt());
     m_tasksDone  = obj.value("tasksDone").toInt();
@@ -284,12 +284,21 @@ void GameState::fromJson(const QJsonObject& obj)
         seenPlayers.insert(id);
 
         Player& p = m_players[id];      // pravi novog ako ga nema
+        bool isNewPlayer = false;
         if (p.id() != id) {
             p = Player(id, QString());
+            isNewPlayer = true;
         }
         p.setName(pj.value("name").toString());
         p.setSkinId(pj.value("skinId").toInt());
-        p.setPos(QPointF(pj.value("x").toDouble(), pj.value("y").toDouble()));
+
+        // Pozicija iz TCP-a: samo ako je trazeno ili je igrac nov.
+        // Inace pozicije vodi UDP (PositionSnapshot).
+        if (applyPositions || isNewPlayer) {
+            p.setPos(QPointF(pj.value("x").toDouble(),
+                             pj.value("y").toDouble()));
+        }
+
         p.setRole(static_cast<Role>(pj.value("role").toInt()));
         p.setAlive(pj.value("alive").toBool(true));
         p.setKillCooldown(pj.value("killCooldown").toDouble());

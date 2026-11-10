@@ -72,7 +72,7 @@ public:
     Winner checkWinCondition() const;
 
     QJsonObject toJson() const;
-    void        fromJson(const QJsonObject& obj);
+    void        fromJson(const QJsonObject& obj, bool applyPosition = true);
 
     //dodao sam getter jer ne mogu nikako drugacije
     //da dobijem map a treba mi za lokacije taskova u assignTasks
