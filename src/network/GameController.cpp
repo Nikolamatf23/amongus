@@ -393,8 +393,7 @@ void GameController::tick()
         return;
     }
 
-    // Za sada pretpostavljamo precnik igraca od 40 px.
-    constexpr double playerRadius = 20.0;
+    constexpr double playerRadius = Player::RADIUS;
 
     m_emergencyCooldown =
         qMax(0.0, m_emergencyCooldown - dt);

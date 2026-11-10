@@ -19,7 +19,7 @@ public:
     static constexpr double KILL_COOLDOWN=25.0;
 
     // Poluprecnik igraca u pikselima (za kolizije)
-    static constexpr double RADIUS=20.0;
+    static constexpr double RADIUS=10.0;
 
     Player() = default;
     Player(int id, const QString& name);
