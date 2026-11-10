@@ -77,6 +77,7 @@ private:
 
     bool m_hasSentDirection = false;
     bool m_zoomInitialized = false;
+    QHash<int, qint64> m_lastMoveTime;
 };
 
 #endif // GAMESCREEN_H

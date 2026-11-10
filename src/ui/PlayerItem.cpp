@@ -134,6 +134,7 @@ void PlayerItem::setMoving(bool moving)
     if (m_moving) {
         m_frameIndex = 0;
         m_animationTimer.start();
+        updateSprite();
     }
     else {
         m_animationTimer.stop();

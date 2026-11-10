@@ -11,6 +11,7 @@
 #include "game/DeadBody.h"
 #include "game/Task.h"
 
+#include <QDateTime>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>
@@ -185,6 +186,8 @@ void GameScreen::syncPlayers()
 
         const QPointF currentPosition = player.pos();
 
+        const qint64 now = QDateTime::currentMSecsSinceEpoch();
+
         if (m_previousPositions.contains(id)) {
             const QPointF difference =
                 currentPosition - m_previousPositions.value(id);
@@ -193,12 +196,14 @@ void GameScreen::syncPlayers()
                 difference.x() * difference.x() +
                 difference.y() * difference.y());
 
-            const bool moving = distance > MOVEMENT_EPSILON;
-            item->setMoving(moving);
-
-            if (moving) {
+            if (distance > MOVEMENT_EPSILON) {
+                m_lastMoveTime[id] = now;
                 item->setDirection(difference);
             }
+
+            // Igrač "hoda" ako se pomerio u poslednjih 200 ms.
+            const bool moving = (now - m_lastMoveTime.value(id, 0)) < 200;
+            item->setMoving(moving);
         } else {
             item->setMoving(false);
         }
@@ -218,6 +223,7 @@ void GameScreen::syncPlayers()
         m_scene->removeItem(item);
         delete item;
         m_previousPositions.remove(id);
+        m_lastMoveTime.remove(id);
     }
 }
 
