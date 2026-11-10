@@ -128,7 +128,7 @@ void GameScreen::setupUi()
 void GameScreen::setupMap()
 {
     // Ovaj alias mora da postoji u lokalnom resources.qrc.
-    QPixmap mapPixmap(":/map/background.jpg");
+    QPixmap mapPixmap(":/map/map.jpg");
 
     if (mapPixmap.isNull()) {
         qWarning() << "GameScreen: nije moguce ucitati :/map/background.jpg";

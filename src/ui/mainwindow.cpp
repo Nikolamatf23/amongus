@@ -129,7 +129,7 @@ void MainWindow::onHost(const QString& name)
     stopHosting();
 
     m_serverMap = std::make_unique<GameMap>();
-    if (!m_serverMap->load(":/map/background.jpg", ":/map/mask.jpg")) {
+    if (!m_serverMap->load(":/map/map.jpg", ":/map/mask.jpg")) {
         m_serverMap.reset();
         QMessageBox::warning(this, tr("Greska"), tr("Mapa ne moze da se ucita."));
         return;
