@@ -14,6 +14,8 @@ class QWidget;
 
 class PlayerItem : public QObject, public QGraphicsItem
 {
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 public:
     explicit PlayerItem(QGraphicsItem* parent = nullptr);
 
