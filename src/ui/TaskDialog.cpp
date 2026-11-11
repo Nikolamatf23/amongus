@@ -1,49 +1,44 @@
 #include "ui/TaskDialog.h"
+#include "ui/TaskWidget.h"
 
 #include "game/Task.h"
 #include "network/ClientController.h"
 
+#include <QLabel>
+#include <QTimer>
 #include <QVBoxLayout>
-#include <QMessageBox>
 
 TaskDialog::TaskDialog(Task* task,
                        ClientController* controller,
                        QWidget* parent)
-    : QDialog(parent),
-    m_task(task),
-    m_controller(controller)
+    : QDialog(parent)
+    , m_controller(controller)
 {
     setModal(true);
-
-    if (m_task == nullptr) {
-        setWindowTitle(tr("Task"));
-        reject();
-        return;
-    }
-
-    setWindowTitle(m_task->name());
-
-    m_content = m_task->createWidget();
-
-    if (m_content == nullptr) {
-        auto* layout = new QVBoxLayout(this);
-        layout->addWidget(new QMessageBox(
-            QMessageBox::Warning,
-            tr("Task"),
-            tr("This task has no available interface."),
-            QMessageBox::Ok,
-            this));
-        return;
-    }
-
     auto* layout = new QVBoxLayout(this);
-    layout->addWidget(m_content);
 
-    connect(m_task, &Task::completed,
-            this, [this](int completedTaskId) {
-                if (m_controller != nullptr) {
-                    m_controller->completeTask(completedTaskId);
-                }
-                accept();
-            });
+    if (task == nullptr) {
+        setWindowTitle(tr("Task"));
+        // reject() u konstruktoru ne radi pre exec(), pa ga odlazemo.
+        QTimer::singleShot(0, this, &QDialog::reject);
+        return;
+    }
+
+    m_taskId = task->id();
+    setWindowTitle(task->name());
+
+    TaskWidget* content = TaskWidget::create(*task, this);
+    if (content == nullptr) {
+        layout->addWidget(new QLabel(tr("Ovaj task jos nema minigru."), this));
+        return;
+    }
+    layout->addWidget(content);
+
+    connect(content, &TaskWidget::solved, this, [this]() {
+        if (m_controller != nullptr) {
+            m_controller->completeTask(m_taskId);
+        }
+        // Kratka pauza da igrac vidi "Gotovo!", pa zatvaranje.
+        QTimer::singleShot(400, this, &QDialog::accept);
+    });
 }

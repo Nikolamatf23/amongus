@@ -1,6 +1,14 @@
 #ifndef TASKDIALOG_H
 #define TASKDIALOG_H
 
+// ============================================================================
+//  TaskDialog   (UI)
+//  Prozor u kome se igra minigra. GameScreen ga otvara na dugme Use.
+//  Pita TaskWidget::create(task) koju minigru da prikaze; kad widget javi
+//  solved(), salje serveru ClientController::completeTask(id) i zatvara se.
+//  Task (model) ne menja - zavrsetak potvrdjuje server.
+// ============================================================================
+
 #include <QDialog>
 
 class Task;
@@ -17,9 +25,8 @@ public:
                         QWidget* parent = nullptr);
 
 private:
-    Task* m_task = nullptr;
+    int               m_taskId = -1;     // pamtimo id - Task moze biti obrisan
     ClientController* m_controller = nullptr;
-    QWidget* m_content = nullptr;
 };
 
 #endif // TASKDIALOG_H

@@ -63,6 +63,8 @@ set(UI_SOURCES
     src/ui/PlayerItem.cpp
     src/ui/TaskDialog.cpp
     src/ui/EmergencyDialog.cpp
+    src/ui/WireTaskWidget.cpp
+    src/ui/TaskWidget.cpp
 )
 
 set(UI_HEADERS
@@ -76,6 +78,8 @@ set(UI_HEADERS
     include/ui/PlayerItem.h
     include/ui/TaskDialog.h
     include/ui/EmergencyDialog.h
+    include/ui/WireTaskWidget.h
+    include/ui/TaskWidget.h
 )
 
 set(COMMON_RESOURCES
@@ -122,10 +126,14 @@ set(GAME_SCREEN_TEST_SOURCES
     src/ui/PlayerItem.cpp
     src/ui/TaskDialog.cpp
     src/ui/EmergencyDialog.cpp
+    src/ui/TaskWidget.cpp
+    src/ui/WireTaskWidget.cpp
     include/ui/GameScreen.h
     include/ui/PlayerItem.h
     include/ui/TaskDialog.h
     include/ui/EmergencyDialog.h
+    include/ui/TaskWidget.h
+    include/ui/WireTaskWidget.h
     ${COMMON_RESOURCES}
 )
 

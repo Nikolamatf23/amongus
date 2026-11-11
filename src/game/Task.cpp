@@ -1,4 +1,5 @@
 #include "game/Task.h"
+#include "game/tasks/WireTask.h"
 
 Task::Task(int id,
            const QString& name,
@@ -39,3 +40,89 @@ void Task::markCompleted()
     m_completed = true;
     emit completed(m_id);
 }
+
+QJsonObject Task::toJson() const
+{
+    QJsonObject obj;
+
+    obj["id"]=m_id;
+    obj["name"]= m_name;
+    obj["x"]= m_stationPos.x();
+    obj["y"]= m_stationPos.y();
+    obj["type"]= typeToString(type());
+    obj["completed"]= m_completed;
+
+    return obj;
+}
+
+
+Task* Task::create(TaskType type,
+                   int id,
+                   const QString& name,
+                   const QPointF& stationPos,
+                   QObject* parent)
+{
+
+    switch(type){
+    case TaskType::WireTask:
+       return new WireTask(id,name,stationPos);
+       break;
+    }
+
+    return nullptr;
+}
+
+
+QString Task::typeToString(TaskType type)
+{
+    switch(type)
+    {
+    case TaskType::WireTask:
+        return QStringLiteral("WireTask");
+        break;
+    }
+
+    return QString();
+}
+
+bool Task::typeFromString(const QString& text,TaskType& out)
+{
+    if(text==QLatin1String("WireTask")){
+        out=TaskType::WireTask;
+        return true;
+    }
+
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

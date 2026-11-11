@@ -1,28 +1,18 @@
 #ifndef TASK_H
 #define TASK_H
 
-// ============================================================================
-//  Task  «abstract»
-//  Osnovna klasa svih zadataka. Svaki task je na jednoj stanici na mapi.
-//
-//  Dijagram:
-//    - m_id: int                 - m_name: QString
-//    - m_stationPos: QPointF     - m_completed: bool
-//    + isCompleted(): bool
-//    + markCompleted()
-//    + createWidget(): QWidget*  {abstract}
-//    «signal» completed(taskId)
-//
-//  Na klijentu TaskDialog zove createWidget() i prikazuje minigru. Kad je
-//  igrac resi, podklasa zove markCompleted() -> signal completed(taskId)
-//  -> ClientController::completeTask(taskId).
-// ============================================================================
+
 
 #include <QObject>
 #include <QPointF>
 #include <QString>
+#include <QJsonObject>
 
-class QWidget;
+enum class TaskType
+{
+    WireTask
+    // za sad ovoliko
+};
 
 class Task : public QObject
 {
@@ -33,23 +23,43 @@ public:
          const QString& name,
          const QPointF& stationPos,
          QObject* parent = nullptr);
+
     ~Task() override = default;
+
+
+    // izvedena klasa ce mi reci koji je tip taska zapravo
+    virtual TaskType type() const=0;
 
     // getteri
     int     id() const;
     QString name() const;
     QPointF stationPos() const;
-
     bool isCompleted() const;
 
     // Postavlja m_completed i emituje completed(id) - samo prvi put.
     void markCompleted();
 
-    // Pravi widget sa minigrom; vlasnik je pozivalac (TaskDialog).
-    virtual QWidget* createWidget() = 0;
+    QJsonObject toJson() const;
 
-    signals:
-        void completed(int taskId);
+    // Fabrika obrazac
+    // Ovde pravimo Task zadate vrste
+
+    static Task* create(TaskType type,
+                            int id,
+                            const QString& name,
+                            const QPointF& stationPos,
+                            QObject* parent=nullptr);
+
+    // iz tipa taska izvlaci string za toJson
+    static QString typeToString(TaskType type);
+    // iz stringa izvlaci tip taska
+    static bool typeFromString(const QString& text,TaskType& out);
+
+
+signals:
+    void completed(int taskId);
+
+
 
 private:
     int     m_id;
@@ -59,3 +69,4 @@ private:
 };
 
 #endif // TASK_H
+

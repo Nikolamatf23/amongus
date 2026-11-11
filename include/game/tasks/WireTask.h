@@ -1,38 +1,26 @@
 #ifndef WIRETASK_H
 #define WIRETASK_H
 
-// ============================================================================
-//  WireTask  (nasledjuje Task)
-//  Minigra "spajanje zica": levo 4 zice u boji, desno iste boje izmesane.
-//  Igrac misem prevuce zicu do iste boje; kad su sve 4 spojene, task se
-//  zavrsava (markCompleted -> signal completed).
-//
-//  Dijagram:
-//    - m_wireColors: QVector<QColor>
-//    - m_order: QVector<int>
-//    + createWidget(): QWidget*
-// ============================================================================
 
 #include "game/Task.h"
 
-#include <QColor>
-#include <QVector>
 
 class WireTask : public Task
 {
     Q_OBJECT
 
 public:
+    //broj zica za spajanje
+    static constexpr int WIRE_COUNT=4;
+
+
     WireTask(int id,
              const QString& name,
              const QPointF& stationPos,
-             QObject* parent = nullptr);
+             QObject* parent=nullptr);
 
-    QWidget* createWidget() override;
 
-private:
-    QVector<QColor> m_wireColors;   // boje zica, leva strana odozgo nadole
-    QVector<int>    m_order;        // m_order[i] = boja na i-tom mestu desno
+    TaskType type() const override;
 };
 
 #endif // WIRETASK_H
