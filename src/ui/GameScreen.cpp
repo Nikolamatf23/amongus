@@ -165,6 +165,9 @@ void GameScreen::syncPlayers()
     const GameState* state = m_controller->state();
     const QList<Player> players = state->players();
 
+    const Player* me = state->player(cameraTargetPlayerId());
+    const bool iAmGhost = (me != nullptr && !me->isAlive());
+
     QSet<int> currentPlayerIds;
 
     for (const Player& player : players) {
@@ -183,6 +186,10 @@ void GameScreen::syncPlayers()
         item->setName(player.name());
         item->setSkinId(player.skinId());
         item->setAlive(player.isAlive());
+
+
+        item->setVisible(player.isAlive() || iAmGhost);
+        item->setOpacity(player.isAlive() ? 1.0 : 0.7);
 
         const QPointF currentPosition = player.pos();
 
@@ -238,13 +245,17 @@ void GameScreen::syncBodies()
         const int id = body.victimId();
         currentBodyIds.insert(id);
 
-        QGraphicsEllipseItem* item = m_bodyItems.value(id, nullptr);
+        QGraphicsPixmapItem* item = m_bodyItems.value(id, nullptr);
 
         if (item == nullptr) {
-            item = m_scene->addEllipse(
-                -BODY_SIZE / 2.0, -BODY_SIZE / 2.0,
-                BODY_SIZE, BODY_SIZE,
-                QPen(Qt::black), QBrush(Qt::red));
+            const Player* victim = state->player(id);
+            const int skin = victim ? victim->skinId() : 1;
+
+            const QPixmap pix(QStringLiteral(":/players/skin%1_dead.png")
+                                  .arg(skin, 2, 10, QLatin1Char('0')));
+
+            item = m_scene->addPixmap(pix);
+            item->setOffset(-pix.width() / 2.0, -pix.height() / 2.0);
             item->setZValue(5);
             m_bodyItems.insert(id, item);
         }
@@ -259,7 +270,7 @@ void GameScreen::syncBodies()
             continue;
         }
 
-        QGraphicsEllipseItem* item = m_bodyItems.take(id);
+        QGraphicsPixmapItem* item = m_bodyItems.take(id);
         m_scene->removeItem(item);
         delete item;
     }
@@ -394,7 +405,7 @@ void GameScreen::updateMovement()
 
     const Player* player = state->player(m_controller->myId());
 
-    if (player == nullptr || !player->isAlive()) {
+    if (player == nullptr) {
         stopMovement();
         return;
     }

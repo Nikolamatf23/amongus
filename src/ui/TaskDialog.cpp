@@ -23,15 +23,7 @@ TaskDialog::TaskDialog(Task* task,
         QTimer::singleShot(0, this, &QDialog::reject);
         return;
     }
-
-    if (m_controller != nullptr) {
-        connect(m_controller, &ClientController::phaseChanged,
-                this, [this](GamePhase ph) {
-                    if (ph != GamePhase::Playing) {
-                        reject();   // sastanak je počeo, task se prekida
-                    }
-                });
-    }
+    
 
     m_taskId = task->id();
     setWindowTitle(task->name());

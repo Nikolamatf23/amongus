@@ -179,6 +179,7 @@ void PlayerItem::loadSkin()
     m_idleSprite.load(skinPrefix + "idle.png");
     m_walkSprites.load(skinPrefix + "walk.png");
     m_deadSprite.load(skinPrefix + "dead.png");
+    m_ghostSprite.load(QStringLiteral(":/players/duh.png"));
 
     if (m_idleSprite.isNull() ||
         m_walkSprites.isNull() ||
@@ -198,7 +199,8 @@ void PlayerItem::loadSkin()
 void PlayerItem::updateSprite()
 {
     if (!m_alive) {
-        m_currentSprite = m_deadSprite;
+        // Duh; ako slika nedostaje, koristimo idle da se nešto vidi.
+        m_currentSprite = m_ghostSprite.isNull() ? m_idleSprite : m_ghostSprite;
     }
     else if (!m_moving) {
         m_currentSprite = m_idleSprite;

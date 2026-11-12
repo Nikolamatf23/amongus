@@ -46,6 +46,7 @@ private:
     QPixmap m_idleSprite;
     QPixmap m_walkSprites;
     QPixmap m_deadSprite;
+    QPixmap m_ghostSprite;
     QPixmap m_currentSprite;
 
     bool m_alive = true;

@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/players">
+        <file alias="duh.png">resources/players/duh.png</file>
         <file alias="skin01_idle.png">resources/unique_16_with_dead_and_walk_50x50/01_sakura/idle.png</file>
         <file alias="skin01_walk.png">resources/unique_16_with_dead_and_walk_50x50/01_sakura/walk_2x2.png</file>
         <file alias="skin01_dead.png">resources/unique_16_with_dead_and_walk_50x50/01_sakura/dead.png</file>
@@ -69,4 +70,5 @@
         <file alias="map.jpg">resources/Mapa/map.jpg</file>
         <file alias="mask.jpg">resources/Mapa/mask.jpg</file>
     </qresource>
+
 </RCC>

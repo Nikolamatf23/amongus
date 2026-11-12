@@ -320,7 +320,7 @@ void GameController::handleMove(int playerId, const Message& msg)
 
     Player* player = m_state->player(playerId);
 
-    if (player == nullptr || !player->isAlive()) {
+    if (player == nullptr) {
         return;
     }
 
@@ -406,9 +406,6 @@ void GameController::tick()
         // ovo je tick za killCooldown
         player->tickCooldown(dt);
 
-        if (!player->isAlive()) {
-            continue;
-        }
 
         const QPointF nextPosition =
             player->pos() +

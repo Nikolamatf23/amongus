@@ -62,7 +62,7 @@ private:
     QGraphicsPixmapItem* m_mapItem = nullptr;
 
     QHash<int, PlayerItem*> m_playerItems;
-    QHash<int, QGraphicsEllipseItem*> m_bodyItems;
+    QHash<int, QGraphicsPixmapItem*> m_bodyItems;
     QHash<int, QPointF> m_previousPositions;
 
     QPushButton* m_useButton = nullptr;
