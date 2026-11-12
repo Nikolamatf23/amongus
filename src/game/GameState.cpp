@@ -352,3 +352,21 @@ void GameState::fromJson(const QJsonObject& obj, bool applyPositions)
                                          bj.value("y").toDouble())));
     }
 }
+
+void GameState::respawnPlayers()
+{
+    if (m_map == nullptr) {
+        return;
+    }
+    const QVector<QPointF> spawns = m_map->spawnPoints();
+    if (spawns.isEmpty()) {
+        return;
+    }
+
+    int i = 0;
+    for (Player& p : m_players) {
+        p.setPos(spawns[i % spawns.size()]);
+        p.setInputDir(QPointF());
+        ++i;
+    }
+}

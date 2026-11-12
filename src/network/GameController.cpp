@@ -681,6 +681,7 @@ void GameController::startMeeting(int callerId, int bodyId)
     m_state->setPhase(GamePhase::Discussion);
     m_stateSnapshotTimer.stop();
 
+
     sendPhaseChanged();
     sendSnapshot();
 
@@ -762,6 +763,8 @@ void GameController::endMeeting()
     if (m_state->phase() == GamePhase::GameOver) {
         return;
     }
+
+    m_state->respawnPlayers();
 
     // Partija se nastavlja.
     m_emergencyCooldown = EMERGENCY_COOLDOWN;

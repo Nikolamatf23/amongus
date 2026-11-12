@@ -502,6 +502,12 @@ void GameScreen::onEmergencyClicked()
                     m_controller->requestEmergency();
                 }
             });
+    connect(m_controller, &ClientController::phaseChanged,
+        &dialog, [&dialog](GamePhase ph) {
+            if (ph != GamePhase::Playing) {
+                dialog.reject();
+            }
+        });
 
     dialog.exec();
 }

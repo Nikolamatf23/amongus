@@ -51,6 +51,7 @@ public:
 
     void addPlayer(const Player& p);
     void removePlayer(int id);
+    void respawnPlayers();
 
     Player*       player(int id);
     const Player* player(int id) const;
