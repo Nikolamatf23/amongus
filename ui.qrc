@@ -1,0 +1,7 @@
+<RCC>
+    <!-- Slike samo za UI ekrane (StartScreen...). Odvojeno od resources.qrc da izmene ovde
+         ne bi ponovo kompajlirale sve sprajtove i mapu, i da ne ulazi u GameScreenTest. -->
+    <qresource prefix="/ui">
+        <file alias="startScreenBackground.png">resources/ui/startScreenBackground.png</file>
+    </qresource>
+</RCC>

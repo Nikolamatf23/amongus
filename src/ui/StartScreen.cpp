@@ -1,9 +1,11 @@
 #include "ui/StartScreen.h"
 
 #include <QFormLayout>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -13,6 +15,7 @@ StartScreen::StartScreen(QWidget* parent)
     , m_ipEdit(new QLineEdit(this))
     , m_hostBtn(new QPushButton(tr("Host"), this))
     , m_joinBtn(new QPushButton(tr("Join"), this))
+    , m_background(QStringLiteral(":/ui/startScreenBackground.png"))
 {
     auto* title = new QLabel(tr("Among Us"), this);
     QFont f = title->font();
@@ -34,16 +37,24 @@ StartScreen::StartScreen(QWidget* parent)
     buttons->addWidget(m_hostBtn);
     buttons->addWidget(m_joinBtn);
 
-    auto* box = new QVBoxLayout;
+    // Forma je u poluprovidnom tamnom panelu da bi se citala preko slike.
+    auto* panel = new QFrame(this);
+    panel->setObjectName(QStringLiteral("startPanel"));
+    panel->setStyleSheet(QStringLiteral(
+        "#startPanel { background-color: rgba(0, 0, 0, 170); border-radius: 12px; }"
+        "#startPanel QLabel { color: white; }"));
+
+    auto* box = new QVBoxLayout(panel);
+    box->setContentsMargins(30, 24, 30, 24);
     box->addWidget(title);
     box->addSpacing(20);
     box->addLayout(form);
     box->addLayout(buttons);
 
-    // Forma je centrirana i ne siri se preko celog prozora.
-    auto* outer = new QHBoxLayout(this);
+    // Panel je centriran i ne siri se preko celog prozora.
+    auto* outer = new QVBoxLayout(this);
     outer->addStretch();
-    outer->addLayout(box);
+    outer->addWidget(panel, 0, Qt::AlignHCenter);
     outer->addStretch();
 
     connect(m_nameEdit, &QLineEdit::textChanged, this, &StartScreen::updateButtons);
@@ -63,6 +74,29 @@ void StartScreen::setBusy(bool busy)
 {
     m_busy = busy;
     updateButtons();
+}
+
+void StartScreen::paintEvent(QPaintEvent* event)
+{
+    QPainter p(this);
+
+    if (m_background.isNull()) {
+        // Slika nije ugradjena (nema je u resources.qrc) - samo crna pozadina.
+        p.fillRect(rect(), Qt::black);
+    } else {
+        // Skaliranje je skupo (2560x1440), pa se radi samo kad se promeni velicina ekrana.
+        if (m_scaledFor != size()) {
+            m_scaled = m_background.scaled(size(), Qt::KeepAspectRatioByExpanding,
+                                           Qt::SmoothTransformation);
+            m_scaledFor = size();
+        }
+        // Centriranje: visak slike se ravnomerno odseca sa obe strane.
+        const int x = (width()  - m_scaled.width())  / 2;
+        const int y = (height() - m_scaled.height()) / 2;
+        p.drawPixmap(x, y, m_scaled);
+    }
+
+    QWidget::paintEvent(event);
 }
 
 void StartScreen::updateButtons()

@@ -12,6 +12,7 @@
 //    <<signal>> joinClicked(name, ip)
 // ============================================================================
 
+#include <QPixmap>
 #include <QWidget>
 
 class QLineEdit;
@@ -31,6 +32,10 @@ signals:
     void hostClicked(const QString& name);
     void joinClicked(const QString& name, const QString& ip);
 
+protected:
+    // Crta pozadinsku sliku preko celog ekrana ("cover": bez razvlacenja, visak se odseca).
+    void paintEvent(QPaintEvent* event) override;
+
 private slots:
     void updateButtons();
 
@@ -40,6 +45,10 @@ private:
     QPushButton* m_hostBtn;
     QPushButton* m_joinBtn;
     bool         m_busy = false;
+
+    QPixmap      m_background;   // original iz :/ui/startScreenBackground.png
+    QPixmap      m_scaled;       // kes skalirane slike...
+    QSize        m_scaledFor;    // ...i velicina ekrana za koju je skalirana
 };
 
 #endif // STARTSCREEN_H
