@@ -226,7 +226,7 @@ void GameController::onMessage(int playerId, const Message& msg)
 
 void GameController::assignTasks()
 {
-    static GameMap* map = m_state->getMap();
+    GameMap* map = m_state->getMap();
 
     if (map == nullptr) {
         return;
@@ -399,6 +399,7 @@ void GameController::tick()
         qMax(0.0, m_emergencyCooldown - dt);
 
     const auto players = m_state->players();
+    const QSize mapSize = map->size();
 
     for (const auto& copy : players) {
         Player* player = m_state->player(copy.id());
@@ -411,9 +412,21 @@ void GameController::tick()
             player->pos() +
             player->inputDir() * MOVE_SPEED * dt;
 
-        if (map->isWalkable(nextPosition, playerRadius)) {
+        bool canMove;
+        if (player->isAlive()) {
+            canMove = map->isWalkable(nextPosition, playerRadius);
+        } else {
+            // Duh: zidovi ne smetaju, ali ostaje unutar mape.
+            canMove = nextPosition.x() >= playerRadius &&
+                      nextPosition.y() >= playerRadius &&
+                      nextPosition.x() <= mapSize.width()  - playerRadius &&
+                      nextPosition.y() <= mapSize.height() - playerRadius;
+        }
+
+        if (canMove) {
             player->setPos(nextPosition);
         }
+
     }
 }
 void GameController::handleKill(int playerId, const Message& msg)
