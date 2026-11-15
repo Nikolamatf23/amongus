@@ -54,11 +54,6 @@ int Client::myId() const
     return m_myId;
 }
 
-bool Client::isUdpReady() const
-{
-    return m_udpReady;
-}
-
 void Client::resetSession()
 {
     m_udpRegisterTimer.stop();

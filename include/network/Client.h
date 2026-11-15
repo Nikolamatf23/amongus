@@ -31,7 +31,6 @@ public:
 
     bool isConnected() const;   // stanje TCP veze
     int myId() const;           // -1 dok ne stigne JoinAccepted
-    bool isUdpReady() const;
 
 signals:
     void connected();
