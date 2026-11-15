@@ -54,11 +54,6 @@ int Client::myId() const
     return m_myId;
 }
 
-bool Client::isUdpReady() const
-{
-    return m_udpReady;
-}
-
 void Client::resetSession()
 {
     m_udpRegisterTimer.stop();
@@ -196,10 +191,6 @@ void Client::onReadyRead()
 
 void Client::registerUdp()
 {
-    if (m_udpReady) {
-        m_udpRegisterTimer.stop();
-        return;
-    }
 
     if (++m_registerAttempts > kMaxRegisterAttempts) {
         m_udpRegisterTimer.stop();
@@ -242,13 +233,11 @@ void Client::onUdpReadyRead()
             continue;
         }
 
-        QJsonParseError error;
-        const QJsonDocument doc = QJsonDocument::fromJson(datagram, &error);
-        if (error.error != QJsonParseError::NoError || !doc.isObject()) {
+        Message message = Message::fromBytes(datagram);
+
+        if (message.type() == MessageType::Invalid) {
             continue;
         }
-
-        Message message = Message::fromBytes(datagram);
 
         if (message.type() == MessageType::UdpRegistered) {
             m_udpReady = true;
