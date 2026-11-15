@@ -19,10 +19,6 @@ bool Player::canKill() const
 {
     return m_alive && isImpostor() && m_killCooldown<=0.0;
 }
-void Player::resetKillCooldown()
-{
-    m_killCooldown = KILL_COOLDOWN;
-}
 
 void Player::tickCooldown(double dt)
 {

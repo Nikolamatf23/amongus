@@ -15,9 +15,6 @@ class Player
 {
 public:
 
-    // Koliko sekundi impostor ceka izmedju dva ubistva
-    static constexpr double KILL_COOLDOWN=25.0;
-
     // Poluprecnik igraca u pikselima (za kolizije)
     static constexpr double RADIUS=10.0;
 
@@ -29,9 +26,6 @@ public:
     // Impostor koji je i dalje u igri i ciji je cooldown istekao
     // Domet do mete ce proveriti server
     bool canKill() const;
-
-    // Ponovo pokrece cooldown za ubijanje (posle ubistva).
-    void resetKillCooldown();
 
     // Smanjuje cooldown za dt sekundi (ne ispod 0).
     void tickCooldown(double dt);

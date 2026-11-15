@@ -438,9 +438,7 @@ void GameController::handleKill(int playerId, const Message& msg)
     Player* attacker = m_state->player(playerId);
 
     if (attacker == nullptr ||
-        !attacker->isAlive() ||
-        !attacker->isImpostor() ||
-        attacker->killCooldown() > 0.0)
+       !attacker->canKill())
     {
         return;
     }
@@ -454,9 +452,10 @@ void GameController::handleKill(int playerId, const Message& msg)
 
     bool canKill = false;
 
-    const double distance = QLineF(killer->pos(), target->pos()).length();
+    const double distance = killer->distanceTo(target->pos());
 
-    if (distance <= KILL_RANGE) {
+    if (killer->isNear(target->pos(), KILL_RANGE))
+    {
         canKill = true;
     }
 
@@ -605,6 +604,7 @@ void GameController::handleChat(int playerId, const Message& msg)
     }
 
     Player* player = m_state->player(playerId);
+
 
     if (player == nullptr || !player->isAlive()) {
         return;
