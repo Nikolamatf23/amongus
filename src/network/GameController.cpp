@@ -13,6 +13,7 @@
 #include <QSet>
 
 #include "game/GameMap.h"
+#include "game/Task.h"
 #include "game/tasks/WireTask.h"
 
 
@@ -265,7 +266,8 @@ void GameController::assignTasks()
 
             selectedStations.insert(index);
 
-            auto* task = new WireTask(
+            auto* task = Task::create(
+                TaskType::WireTask,
                 nextTaskId++,
                 QStringLiteral("Povezi zice"),
                 stations[index]

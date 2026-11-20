@@ -1,7 +1,6 @@
 #include "game/GameState.h"
 #include "game/GameMap.h"
 #include "game/Task.h"
-#include "game/tasks/WireTask.h"
 
 #include <QJsonArray>
 #include <QSet>
@@ -24,25 +23,34 @@ void countTasks(const QMap<int, Player>& players, int& done, int& total)
     }
 }
 
-// Pravi task odgovarajuce klase po imenu klase iz JSON-a.
-Task* createTask(const QString& type, int id, const QString& name, const QPointF& pos)
-{
-    if (type == QLatin1String("WireTask")) {
-        return new WireTask(id, name, pos);
-    }
-    return nullptr;   // ovde se dodaju nove vrste taskova
-}
-
+// Task -> JSON. Vrsta se pise preko Task::typeToString, ne preko imena
+// C++ klase, da preimenovanje klase ne bi promenilo protokol.
 QJsonObject taskToJson(const Task* t)
 {
     QJsonObject obj;
     obj["id"]        = t->id();
-    obj["type"]      = QString::fromLatin1(t->metaObject()->className());
+    obj["type"]      = Task::typeToString(t->type());
     obj["name"]      = t->name();
     obj["x"]         = t->stationPos().x();
     obj["y"]         = t->stationPos().y();
     obj["completed"] = t->isCompleted();
     return obj;
+}
+
+// JSON -> novi Task odgovarajuce vrste; nullptr za nepoznatu vrstu.
+// Polje "completed" se ovde ne cita - to radi GameState::fromJson i za
+// nove i za postojece taskove.
+Task* taskFromJson(const QJsonObject& obj)
+{
+    TaskType type;
+    if (!Task::typeFromString(obj.value("type").toString(), type)) {
+        return nullptr;
+    }
+    return Task::create(type,
+                        obj.value("id").toInt(-1),
+                        obj.value("name").toString(),
+                        QPointF(obj.value("x").toDouble(),
+                                obj.value("y").toDouble()));
 }
 
 QJsonObject playerToJson(const Player& p)
@@ -92,29 +100,42 @@ GameState::~GameState()
 
 void GameState::addPlayer(const Player& p)
 {
-    if (p.id() < 0 || m_players.contains(p.id()) || m_players.size() >= 16) {
-        return;                                // max 16 igraca (4..16)
-    }
+    if(p.id()<0 || m_players.contains(p.id()) || m_players.size()>=16)
+        return;
+
     Player copy = p;
-    // Novi igrac se pojavljuje na sledecoj spawn tacki mape.
-    if (m_map != nullptr && !m_map->spawnPoints().isEmpty()) {
-        const QVector<QPointF> spawns = m_map->spawnPoints();
-        copy.setPos(spawns[m_players.size() % spawns.size()]);
+    if(m_map!=nullptr && !m_map->spawnPoints().isEmpty()){
+        const QVector<QPointF> spawns=m_map->spawnPoints();
+
+        for(const QPointF& spawn : spawns){
+            bool isFree=true;
+            for(const Player& other : m_players){
+                if(other.pos()==spawn){
+                    isFree=false;
+                    break;
+                }
+            }
+
+            if(isFree){
+                copy.setPos(spawn);
+                break;;
+            }
+        }
     }
     m_players.insert(copy.id(), copy);
 }
 
 void GameState::removePlayer(int id)
 {
-    auto it = m_players.find(id);
-    if (it == m_players.end()) {
+    auto it=m_players.find(id);
+    if(it==m_players.end())
         return;
+
+    for(Task* t : it->tasks()){
+        if(t!=nullptr)
+            t->deleteLater();
     }
-    for (Task* t : it->tasks()) {
-        if (t != nullptr) {
-            t->deleteLater();   // mozda je bas otvoren u TaskDialog-u
-        }
-    }
+
     m_players.erase(it);
 }
 
@@ -310,10 +331,7 @@ void GameState::fromJson(const QJsonObject& obj, bool applyPositions)
 
             Task* t = oldTasks.value(taskId, nullptr);
             if (t == nullptr) {
-                t = createTask(tj.value("type").toString(), taskId,
-                               tj.value("name").toString(),
-                               QPointF(tj.value("x").toDouble(),
-                                       tj.value("y").toDouble()));
+                t = taskFromJson(tj);
                 if (t == nullptr) {
                     continue;           // nepoznata vrsta taska
                 }
