@@ -8,8 +8,7 @@
 namespace
 {
 
-// Prebrojava taskove POSADE (i zive i mrtve - duhovi mogu da ih zavrse).
-// Impostorovi taskovi su lazni i ne broje se.
+// Duhovi mogu da završe zadatke, pa u napredak ulaze i zadaci mrtvih članova posade.
 void countTasks(const QMap<int, Player>& players, int& done, int& total)
 {
     done = 0;
@@ -103,26 +102,10 @@ void GameState::addPlayer(const Player& p)
     if(p.id()<0 || m_players.contains(p.id()) || m_players.size()>=16)
         return;
 
-    Player copy = p;
-    if(m_map!=nullptr && !m_map->spawnPoints().isEmpty()){
-        const QVector<QPointF> spawns=m_map->spawnPoints();
-
-        for(const QPointF& spawn : spawns){
-            bool isFree=true;
-            for(const Player& other : m_players){
-                if(other.pos()==spawn){
-                    isFree=false;
-                    break;
-                }
-            }
-
-            if(isFree){
-                copy.setPos(spawn);
-                break;;
-            }
-        }
+    m_players.insert(p.id(), p);
+    if (m_phase == GamePhase::Lobby) {
+        respawnPlayers();
     }
-    m_players.insert(copy.id(), copy);
 }
 
 void GameState::removePlayer(int id)
@@ -137,6 +120,9 @@ void GameState::removePlayer(int id)
     }
 
     m_players.erase(it);
+    if (m_phase == GamePhase::Lobby) {
+        respawnPlayers();
+    }
 }
 
 Player* GameState::player(int id)
@@ -173,7 +159,7 @@ void GameState::addBody(const DeadBody& b)
 {
     for (const DeadBody& existing : m_bodies) {
         if (existing.victimId() == b.victimId()) {
-            return;                            // jedna zrtva = jedno telo
+            return; // ID žrtve jednoznačno određuje telo u ovoj partiji.
         }
     }
     m_bodies.append(b);
@@ -205,6 +191,7 @@ void GameState::setPhase(GamePhase ph)
 
 double GameState::taskProgress() const
 {
+    // Udeo se računa iz zadataka dostupnih u ovoj instanci stanja igre.
     countTasks(m_players, m_tasksDone, m_tasksTotal);
     if (m_tasksTotal == 0) {
         return 0.0;
@@ -235,7 +222,7 @@ Winner GameState::checkWinCondition() const
     if (impostors == 0) {
         return Winner::Crewmates;
     }
-    // 2) Impostora koliko i posade (ili vise) -> impostori pobedjuju.
+    // Broj živih igrača ima prednost nad proverom završenih zadataka.
     if (impostors >= crew) {
         return Winner::Impostors;
     }
@@ -381,9 +368,12 @@ void GameState::respawnPlayers()
         return;
     }
 
-    int i = 0;
+    const qsizetype playerCount = m_players.size();
+    qsizetype i = 0;
     for (Player& p : m_players) {
-        p.setPos(spawns[i % spawns.size()]);
+        // Deli krug na približno jednake razmake. Četiri igrača koriste tačke 1, 3, 6 i 8.
+        const qsizetype spawnIndex = i * spawns.size() / playerCount;
+        p.setPos(spawns[spawnIndex]);
         p.setInputDir(QPointF());
         ++i;
     }

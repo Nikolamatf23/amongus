@@ -47,15 +47,19 @@ bool GameMap::load(const QString& backgroundPath, const QString& maskPath)
         loaded.m_stations.append(candidates.at(i * candidates.size() / stationCount));
     }
 
-    // Pozicije oko centralnog stola, u pikselima originalne mape.
+    // Deset ravnomerno raspoređenih pozicija oko stola, u smeru kazaljke na satu.
     if (mask.size() == QSize(2880, 1472)) {
         const QVector<QPointF> spawnPoints{
-            {1540, 305}, // gore levo
-            {1752, 305}, // gore desno
-            {1767, 365}, // desno
-            {1692, 458}, // dole desno
-            {1600, 458}, // dole levo
-            {1525, 365}, // levo
+            {1646, 276},
+            {1709, 288},
+            {1758, 329},
+            {1758, 391},
+            {1709, 432},
+            {1646, 444},
+            {1583, 432},
+            {1534, 391},
+            {1534, 329},
+            {1583, 288},
         };
         for (const QPointF& position : spawnPoints) {
             if (loaded.isWalkable(position, PlacementRadius)) {
