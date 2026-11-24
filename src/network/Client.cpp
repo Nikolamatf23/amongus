@@ -160,8 +160,7 @@ void Client::onReadyRead()
             return;
         }
 
-        const quint32 messageSize = qFromBigEndian<quint32>(
-            reinterpret_cast<const uchar*>(m_buffer.constData()));
+        const quint32 messageSize = qFromBigEndian<quint32>(m_buffer.constData());
 
         if (messageSize > kMaxTcpMessageSize) {
             emit errorOccurred("Server je poslao neispravnu poruku.");
